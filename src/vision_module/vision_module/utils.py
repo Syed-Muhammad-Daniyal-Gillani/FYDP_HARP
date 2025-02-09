@@ -1,6 +1,8 @@
 import cv2
 import os
+from fer import FER
 
+detector = FER()
 video_in = None
 # cascade_path = os.path.join(os.path.abspath(__file__), "haarcascade_frontalface_default.xml")
 
@@ -43,3 +45,16 @@ def detect_face(img, frame_width, frame_height):
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     return img, (round(normalized_x, 2), round(normalized_y, 2)), largest_face_area
+
+def detect_emotion(face_roi):
+    """
+    Detects emotions from a face region.
+    """
+    if face_roi is None:
+        return "No face detected"
+
+    results = detector.detect_emotions(face_roi)
+    if results:
+        emotion, score = max(results[0]["emotions"].items(), key=lambda item: item[1])
+        return emotion
+    return "Neutral"  # Default if no emotion is detected
