@@ -1,5 +1,8 @@
 import cv2
+import os
+
 video_in = None
+# cascade_path = os.path.join(os.path.abspath(__file__), "haarcascade_frontalface_default.xml")
 
 def initialize_camera(camera_index):
     global video_in
@@ -23,7 +26,7 @@ def detect_face(img, frame_width, frame_height):
     """
     Detects faces in an image and calculates normalized center coordinates.
     """
-    faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    faceCascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Detect faces
