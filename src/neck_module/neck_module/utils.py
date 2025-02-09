@@ -5,7 +5,7 @@ video_in = None
 pid = [6, 1, 2]
 
 class RobotNeck:
-    def __init__(self, serial_port='COM8', baud_rate=9600):
+    def __init__(self, serial_port='/dev/ttyACM0', baud_rate=9600):
         self.servo_yaw = 90  # Default yaw angle (horizontal)
         self.servo_pitch = 50  # Default pitch angle (vertical)
         self.serial_conn = serial.Serial(serial_port, baud_rate)
