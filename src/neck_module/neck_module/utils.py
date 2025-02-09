@@ -2,12 +2,12 @@ import cv2
 import serial
 video_in = None
 # PID Controller constants [Kp, Kd, Ki]
-pid = [6, 1, 2]
+pid = [3, 1, 2]
 
 class RobotNeck:
     def __init__(self, serial_port='/dev/ttyACM0', baud_rate=9600):
         self.servo_yaw = 90  # Default yaw angle (horizontal)
-        self.servo_pitch = 50  # Default pitch angle (vertical)
+        self.servo_pitch = 70  # Default pitch angle (vertical)
         self.serial_conn = serial.Serial(serial_port, baud_rate)
 
     def move_servo(self, yaw_angle, pitch_angle):

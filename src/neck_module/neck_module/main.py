@@ -12,7 +12,7 @@ class NeckController(Node):
             Float32MultiArray,
             'neck_coordinates',
             self.listener_callback,
-            10  
+            1  
         )
         
         # Initialize neck movement

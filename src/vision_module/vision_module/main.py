@@ -15,8 +15,8 @@ cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)  # Capture video frame
 class FaceTracker(Node):
     def __init__(self):
         super().__init__('face_tracker')
-        self.publisher_ = self.create_publisher(Float32MultiArray, 'neck_coordinates', 10)
-        self.timer = self.create_timer(0.1, self.track_face)  # Runs every 0.1 seconds (10Hz)
+        self.publisher_ = self.create_publisher(Float32MultiArray, 'neck_coordinates', 1)
+        self.timer = self.create_timer(0.03, self.track_face)  # Runs every 0.05 seconds (10Hz)
 
     def track_face(self):
         cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)
