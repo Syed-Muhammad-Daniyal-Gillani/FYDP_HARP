@@ -1,10 +1,13 @@
 import cv2
 import os
-from fer import FER
+import mediapipe as mp
+import numpy as np
 
-detector = FER()
+# Initialize MediaPipe FaceMesh
+mp_face_mesh = mp.solutions.face_mesh
+mp_drawing = mp.solutions.drawing_utils
+face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, refine_landmarks=True)
 video_in = None
-# cascade_path = os.path.join(os.path.abspath(__file__), "haarcascade_frontalface_default.xml")
 
 def initialize_camera(camera_index):
     global video_in
@@ -48,13 +51,37 @@ def detect_face(img, frame_width, frame_height):
 
 def detect_emotion(face_roi):
     """
-    Detects emotions from a face region.
+    Detects emotions based on facial landmarks using MediaPipe.
     """
     if face_roi is None:
         return "No face detected"
 
-    results = detector.detect_emotions(face_roi)
-    if results:
-        emotion, score = max(results[0]["emotions"].items(), key=lambda item: item[1])
-        return emotion
-    return "Neutral"  # Default if no emotion is detected
+    # Convert to RGB for MediaPipe
+    rgb_face = cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB)
+    results = face_mesh.process(rgb_face)
+
+    if results.multi_face_landmarks:
+        for face_landmarks in results.multi_face_landmarks:
+            landmarks = [(int(l.x * face_roi.shape[1]), int(l.y * face_roi.shape[0])) for l in face_landmarks.landmark]
+
+            # Key facial points
+            left_eyebrow = landmarks[70][1]  # Top of left eyebrow
+            right_eyebrow = landmarks[295][1]  # Top of right eyebrow
+            mouth_open = landmarks[13][1] - landmarks[14][1]  # Mouth openness
+            left_lip = landmarks[61][1]  # Left lip corner
+            right_lip = landmarks[291][1]  # Right lip corner
+            lip_center = landmarks[0][1]  # Center of lips
+
+            # Emotion detection logic
+            if mouth_open > 10:  # Surprise
+                return "Surprised"
+            elif left_eyebrow < landmarks[159][1] and right_eyebrow < landmarks[386][1]:  # Angry
+                return "Angry"
+            elif left_lip < lip_center and right_lip < lip_center:  # Smile detection
+                return "Happy"
+            elif mouth_open < 2 and abs(left_lip - right_lip) < 3:  # No expression
+                return "Neutral"
+            else:
+                return "Confused"
+
+    return "Neutral"
