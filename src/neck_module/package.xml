@@ -4,7 +4,7 @@
   <name>neck_module</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="Darkness_Linux">darkdev</maintainer>
+  <maintainer email="darkdev@todo.todo">darkdev</maintainer>
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>
