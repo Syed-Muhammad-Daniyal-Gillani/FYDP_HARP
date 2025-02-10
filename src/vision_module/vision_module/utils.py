@@ -2,6 +2,7 @@ import cv2
 import os
 import mediapipe as mp
 import numpy as np
+from deepface import DeepFace ## pip install deepface
 
 # Initialize MediaPipe FaceMesh
 mp_face_mesh = mp.solutions.face_mesh
@@ -50,38 +51,5 @@ def detect_face(img, frame_width, frame_height):
     return img, (round(normalized_x, 2), round(normalized_y, 2)), largest_face_area
 
 def detect_emotion(face_roi):
-    """
-    Detects emotions based on facial landmarks using MediaPipe.
-    """
-    if face_roi is None:
-        return "No face detected"
-
-    # Convert to RGB for MediaPipe
-    rgb_face = cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB)
-    results = face_mesh.process(rgb_face)
-
-    if results.multi_face_landmarks:
-        for face_landmarks in results.multi_face_landmarks:
-            landmarks = [(int(l.x * face_roi.shape[1]), int(l.y * face_roi.shape[0])) for l in face_landmarks.landmark]
-
-            # Key facial points
-            left_eyebrow = landmarks[70][1]  # Top of left eyebrow
-            right_eyebrow = landmarks[295][1]  # Top of right eyebrow
-            mouth_open = landmarks[13][1] - landmarks[14][1]  # Mouth openness
-            left_lip = landmarks[61][1]  # Left lip corner
-            right_lip = landmarks[291][1]  # Right lip corner
-            lip_center = landmarks[0][1]  # Center of lips
-
-            # Emotion detection logic
-            if mouth_open > 10:  # Surprise
-                return "Surprised"
-            elif left_eyebrow < landmarks[159][1] and right_eyebrow < landmarks[386][1]:  # Angry
-                return "Angry"
-            elif left_lip < lip_center and right_lip < lip_center:  # Smile detection
-                return "Happy"
-            elif mouth_open < 2 and abs(left_lip - right_lip) < 3:  # No expression
-                return "Neutral"
-            else:
-                return "Confused"
-
-    return "Neutral"
+    detected_emotion = DeepFace.analyze(face_roi, actions = ['emotion'], enforce_detection= False)
+    return detected_emotion[0]["dominant_emotion"]
