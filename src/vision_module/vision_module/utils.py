@@ -1,5 +1,7 @@
 import cv2
 import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import mediapipe as mp
 import numpy as np
 from deepface import DeepFace ## pip install deepface
