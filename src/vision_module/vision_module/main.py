@@ -9,7 +9,7 @@ FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
 # Initialize camera and neck
-initialize_camera(2)  # Change to 1 for external camera
+initialize_camera(0)  # Change to 1 for external camera
 cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)  # Capture video frame
 
 class FaceTracker(Node):

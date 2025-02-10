@@ -17,7 +17,7 @@ setup(
     maintainer_email='Darkness_Linux',
     description='TODO: Package description',
     license='TODO: License declaration',
-    tests_require=['pytest'],
+    # tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'neck_controller = neck_module.main:main',
