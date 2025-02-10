@@ -39,6 +39,7 @@ def detect_face(img, frame_width, frame_height):
     faces = faceCascade.detectMultiScale(imgGray, scaleFactor=1.2, minNeighbors=6, minSize=(50, 50))
     largest_face_area = 0
     normalized_x, normalized_y = 0.0, 0.0
+    face_roi = None
 
     for (x, y, w, h) in faces:
         area = w * h
@@ -46,9 +47,9 @@ def detect_face(img, frame_width, frame_height):
             largest_face_area = area
             normalized_x = ((x + w / 2) - frame_width / 2) / (frame_width / 2)
             normalized_y = ((y + h / 2) - frame_height / 2) / (frame_height / 2)
+            face_roi = img[y:y + h, x:x + w]  # Crop the face region
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-    return img, (round(normalized_x, 2), round(normalized_y, 2)), largest_face_area
+    return img, (round(normalized_x, 2), round(normalized_y, 2)), largest_face_area, face_roi
 
 def detect_emotion(face_roi):
     detected_emotion = DeepFace.analyze(face_roi, actions = ['emotion'], enforce_detection= False)

@@ -22,19 +22,19 @@ class FaceTracker(Node):
 
     def track_face(self):
         cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)
-        img, (normalized_x, normalized_y), face_area = detect_face(cam_img, FRAME_WIDTH, FRAME_HEIGHT)
+        img, (normalized_x, normalized_y), face_area, face_roi = detect_face(cam_img, FRAME_WIDTH, FRAME_HEIGHT)
 
         if face_area > 0:
             msg = Float32MultiArray()
             msg.data = [normalized_x, normalized_y]
             self.publisher_.publish(msg)
             self.get_logger().info(f"Published: X={normalized_x}, Y={normalized_y}")
-
-            emotion = detect_emotion(img)
-            emotion_msg = String()
-            emotion_msg.data = emotion
-            self.emotion_publisher.publish(emotion_msg)
-            self.get_logger().info(f"Published Emotion: {emotion}")            
+            if face_roi is not None:
+                emotion = detect_emotion(face_roi)
+                emotion_msg = String()
+                emotion_msg.data = emotion
+                self.emotion_publisher.publish(emotion_msg)
+                self.get_logger().info(f"Published Emotion: {emotion}")            
 
         # Display the video frame with detections
         cv2.imshow("Face Tracker", img)
