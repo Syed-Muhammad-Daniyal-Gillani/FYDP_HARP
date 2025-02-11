@@ -2,10 +2,18 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 import cv2
+import os
+
+from ament_index_python.packages import get_package_share_directory
 
 class FaceAnimationNode(Node):
     def __init__(self):
         super().__init__('face_animation')
+
+        # Get the installed package path
+        package_share_path = get_package_share_directory('face_animations')
+        emotions_path = os.path.join(package_share_path, 'emotions')
+
         self.subscription = self.create_subscription(
             String,
             'user_emotions',
@@ -13,12 +21,13 @@ class FaceAnimationNode(Node):
             10
         )
         self.subscription  # prevent unused variable warning
+
         self.emotion_images = {
-            "happy": "face_animations/display_emotions/happy.png",
-            "sad": "face_animations/display_emotions/sad.png",
-            "angry": "face_animations/display_emotions/angry.png",
-            "surprised": "face_animations/display_emotions/surprised.png",
-            "neutral": "face_animations/display_emotions/neutral.png"
+            "happy": os.path.join(emotions_path, "happy.png"),
+            "sad": os.path.join(emotions_path, "sad.png"),
+            "angry": os.path.join(emotions_path, "angry.png"),
+            "surprised": os.path.join(emotions_path, "surprised.png"),
+            "neutral": os.path.join(emotions_path, "neutral.png")
         }
 
     def emotion_callback(self, msg):
