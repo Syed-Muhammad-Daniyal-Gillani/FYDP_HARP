@@ -1,8 +1,16 @@
 import cv2
 import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+import mediapipe as mp
+import numpy as np
+from deepface import DeepFace ## pip install deepface
 
+# Initialize MediaPipe FaceMesh
+mp_face_mesh = mp.solutions.face_mesh
+mp_drawing = mp.solutions.drawing_utils
+face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, refine_landmarks=True)
 video_in = None
-# cascade_path = os.path.join(os.path.abspath(__file__), "haarcascade_frontalface_default.xml")
 
 def initialize_camera(camera_index):
     global video_in
@@ -33,6 +41,7 @@ def detect_face(img, frame_width, frame_height):
     faces = faceCascade.detectMultiScale(imgGray, scaleFactor=1.2, minNeighbors=6, minSize=(50, 50))
     largest_face_area = 0
     normalized_x, normalized_y = 0.0, 0.0
+    face_roi = None
 
     for (x, y, w, h) in faces:
         area = w * h
@@ -40,6 +49,10 @@ def detect_face(img, frame_width, frame_height):
             largest_face_area = area
             normalized_x = ((x + w / 2) - frame_width / 2) / (frame_width / 2)
             normalized_y = ((y + h / 2) - frame_height / 2) / (frame_height / 2)
+            face_roi = img[y:y + h, x:x + w]  # Crop the face region
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    return img, (round(normalized_x, 2), round(normalized_y, 2)), largest_face_area, face_roi
 
-    return img, (round(normalized_x, 2), round(normalized_y, 2)), largest_face_area
+def detect_emotion(face_roi):
+    detected_emotion = DeepFace.analyze(face_roi, actions = ['emotion'], enforce_detection= False)
+    return detected_emotion[0]["dominant_emotion"]
