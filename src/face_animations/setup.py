@@ -14,13 +14,9 @@ setup(
     maintainer_email='your_email@example.com',
     description='Face animations module for displaying emotions',
     license='MIT',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'face_animations = face_animations.main:main',
         ],
     },
-    data_files=[
-        ('share/' + package_name + '/emotions', glob('face_animations/emotions/*.png'))
-    ],
 )

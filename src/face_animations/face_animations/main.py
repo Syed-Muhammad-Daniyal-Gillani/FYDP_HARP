@@ -4,15 +4,9 @@ from std_msgs.msg import String
 import cv2
 import os
 
-from ament_index_python.packages import get_package_share_directory
-
 class FaceAnimationNode(Node):
     def __init__(self):
         super().__init__('face_animation')
-
-        # Get the installed package path
-        package_share_path = get_package_share_directory('face_animations')
-        emotions_path = os.path.join(package_share_path, 'emotions')
 
         self.subscription = self.create_subscription(
             String,
@@ -22,13 +16,22 @@ class FaceAnimationNode(Node):
         )
         self.subscription  # prevent unused variable warning
 
+        # Manually set the path to the source directory
+        workspace_dir = "/home/darkdev/ROS_Workspaces/FYDP_HARP"
+
+        # Construct the absolute path to the display_emotions folder inside src/
+        resource_folder = os.path.join(workspace_dir, "src", "face_animations", "resource", "display_emotions")
+
+        # Define the emotion images dictionary
         self.emotion_images = {
-            "happy": os.path.join(emotions_path, "happy.png"),
-            "sad": os.path.join(emotions_path, "sad.png"),
-            "angry": os.path.join(emotions_path, "angry.png"),
-            "surprised": os.path.join(emotions_path, "surprised.png"),
-            "neutral": os.path.join(emotions_path, "neutral.png")
+            "happy": os.path.join(resource_folder, "happy.png"),
+            "sad": os.path.join(resource_folder, "sad.png"),
+            "angry": os.path.join(resource_folder, "angry.png"),
+            "surprise": os.path.join(resource_folder, "surprised.png"),
+            "neutral": os.path.join(resource_folder, "neutral.png")
         }
+
+        self.get_logger().info(f"Emotion images directory: {resource_folder}")
 
     def emotion_callback(self, msg):
         emotion = msg.data.lower()
