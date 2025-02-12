@@ -3,11 +3,11 @@ from rclpy.node import Node
 from std_msgs.msg import String
 import cv2
 import os
+from ament_index_python.packages import get_package_share_directory
 
 class FaceAnimationNode(Node):
     def __init__(self):
         super().__init__('face_animation')
-
         self.subscription = self.create_subscription(
             String,
             'user_emotions',
@@ -16,22 +16,16 @@ class FaceAnimationNode(Node):
         )
         self.subscription  # prevent unused variable warning
 
-        # Manually set the path to the source directory
-        workspace_dir = "/home/darkdev/ROS_Workspaces/FYDP_HARP"
-
-        # Construct the absolute path to the display_emotions folder inside src/
-        resource_folder = os.path.join(workspace_dir, "src", "face_animations", "resource", "display_emotions")
-
-        # Define the emotion images dictionary
+        # Get the correct path for images
+        package_share_directory = get_package_share_directory('face_animations')
         self.emotion_images = {
-            "happy": os.path.join(resource_folder, "happy.png"),
-            "sad": os.path.join(resource_folder, "sad.png"),
-            "angry": os.path.join(resource_folder, "angry.png"),
-            "surprise": os.path.join(resource_folder, "surprised.png"),
-            "neutral": os.path.join(resource_folder, "neutral.png")
+            "happy": os.path.join(package_share_directory, "display_emotions", "happy.png"),
+            "sad": os.path.join(package_share_directory, "display_emotions", "sad.png"),
+            "angry": os.path.join(package_share_directory, "display_emotions", "angry.png"),
+            "surprise": os.path.join(package_share_directory, "display_emotions", "surprised.png"),
+            "neutral": os.path.join(package_share_directory, "display_emotions", "neutral.png"),
+            "fear": os.path.join(package_share_directory, "display_emotions", "sad.png")
         }
-
-        self.get_logger().info(f"Emotion images directory: {resource_folder}")
 
     def emotion_callback(self, msg):
         emotion = msg.data.lower()

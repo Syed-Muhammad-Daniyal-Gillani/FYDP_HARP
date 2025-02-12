@@ -19,4 +19,11 @@ setup(
             'face_animations = face_animations.main:main',
         ],
     },
+    data_files=[
+        ('share/ament_index/resource_index/packages', ['resource/' + package_name]),  # Install marker
+        ('share/' + package_name, ['package.xml']),  # Install package.xml
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),  # Install launch files
+        (os.path.join('share', package_name, 'display_emotions'), glob('display_emotions/*.png')),  # Install images
+    ],
+    include_package_data=True,  # Ensure extra files are included
 )
