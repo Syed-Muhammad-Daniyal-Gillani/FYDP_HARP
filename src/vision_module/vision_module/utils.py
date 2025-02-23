@@ -1,11 +1,20 @@
 import cv2
 import os
+from ament_index_python.packages import get_package_share_directory
 # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 # os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 # import mediapipe as mp
 import numpy as np
 from deepface import DeepFace ## pip install deepface
 video_in = None
+
+def get_cascade_path():
+    # Get the path to the installed package
+    package_share_directory = get_package_share_directory('vision_module')
+    # Construct the path to the haarcascade file inside the installed package
+    cascade_path = os.path.join(package_share_directory, 'resource', 'haarcascade_frontalface_default.xml')
+    return cascade_path
+
 
 def initialize_camera(camera_index):
     global video_in
@@ -29,7 +38,8 @@ def detect_face(img, frame_width, frame_height):
     """
     Detects faces in an image and calculates normalized center coordinates.
     """
-    faceCascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faceCascade = cv2.CascadeClassifier(get_cascade_path())
+
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Detect faces
