@@ -1,55 +1,65 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
-import cv2
+import asyncio
+import websockets
+import threading
+import webbrowser
 import os
-from ament_index_python.packages import get_package_share_directory
+
+package_path = os.path.expanduser("~/ROS_FYDP/src/face_animations/face_animations")
+
 
 class FaceAnimationNode(Node):
     def __init__(self):
-        super().__init__('face_animation')
+        super().__init__('face_animation_node')
         self.subscription = self.create_subscription(
             String,
-            'user_emotions',
+            '/user_emotions',
             self.emotion_callback,
-            10
-        )
-        self.subscription  # prevent unused variable warning
+            10)
+        self.subscription
+        self.current_emotion = "neutral"
+        self.client_sockets = set()  # Renamed from self.clients
 
-        # Get the correct path for images
-        package_share_directory = get_package_share_directory('face_animations')
-        self.emotion_images = {
-            "happy": os.path.join(package_share_directory, "display_emotions", "happy.png"),
-            "sad": os.path.join(package_share_directory, "display_emotions", "sad.png"),
-            "angry": os.path.join(package_share_directory, "display_emotions", "angry.png"),
-            "surprise": os.path.join(package_share_directory, "display_emotions", "surprised.png"),
-            "neutral": os.path.join(package_share_directory, "display_emotions", "neutral.png"),
-            "fear": os.path.join(package_share_directory, "display_emotions", "sad.png")
-        }
+        # Start WebSocket Server in Background
+        threading.Thread(target=self.start_websocket_server, daemon=True).start()
+
+        # Open the browser with local HTML file
+        webbrowser.open(f"file://{package_path}/index.html")
 
     def emotion_callback(self, msg):
-        emotion = msg.data.lower()
-        if emotion in self.emotion_images:
-            image_path = self.emotion_images[emotion]
-            self.display_image(image_path)
-        else:
-            self.get_logger().warn(f"Emotion '{emotion}' not recognized!")
+        emotion = msg.data.lower().strip()
+        valid_emotions = ["happy", "sad", "angry", "focused", "confused"]
 
-    def display_image(self, image_path):
-        img = cv2.imread(image_path)
-        if img is None:
-            self.get_logger().error(f"Failed to load image: {image_path}")
-            return
-        cv2.imshow("Emotion Display", img)
-        cv2.waitKey(1)  # Required to keep the window open
+        if emotion in valid_emotions and emotion != self.current_emotion:
+            self.current_emotion = emotion
+            self.send_emotion_to_clients(emotion)
+
+    def send_emotion_to_clients(self, emotion):
+        for client in self.client_sockets:  # Updated variable name
+            asyncio.run(client.send(emotion))
+
+    async def websocket_handler(self, websocket, path):
+        self.client_sockets.add(websocket)  # Updated variable name
+        try:
+            async for message in websocket:
+                pass  # No messages expected from the browser
+        finally:
+            self.client_sockets.remove(websocket)  # Updated variable name
+
+    def start_websocket_server(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        server = websockets.serve(self.websocket_handler, "localhost", 8765)
+        loop.run_until_complete(server)
+        loop.run_forever()
 
 def main(args=None):
     rclpy.init(args=args)
     node = FaceAnimationNode()
     rclpy.spin(node)
-    node.destroy_node()
     rclpy.shutdown()
-    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main()
