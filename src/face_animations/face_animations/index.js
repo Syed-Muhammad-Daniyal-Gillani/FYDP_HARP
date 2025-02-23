@@ -25,18 +25,30 @@ class EyeController {
         return this;
     }
 
-    _createKeyframes ({
+    _createKeyframes({
         tgtTranYVal = 0,
         tgtRotVal = 0,
         enteredOffset = 1/3,
         exitingOffset = 2/3,
     } = {}) {
         return [
-            {transform: `translateY(0px) rotate(0deg)`, offset: 0.0},
-            {transform: `translateY(${tgtTranYVal}) rotate(${tgtRotVal})`, offset: enteredOffset},
-            {transform: `translateY(${tgtTranYVal}) rotate(${tgtRotVal})`, offset: exitingOffset},
-            {transform: `translateY(0px) rotate(0deg)`, offset: 1.0},
+            { transform: `translateY(0px) rotate(0deg)`, offset: 0.0 },
+            { transform: `translateY(${tgtTranYVal}) rotate(${tgtRotVal})`, offset: enteredOffset },
+            { transform: `translateY(${tgtTranYVal}) rotate(${tgtRotVal})`, offset: exitingOffset },
+            { transform: `translateY(${tgtTranYVal}) rotate(${tgtRotVal})`, offset: 1.0 },
         ];
+    }
+
+    clearAnimations() {
+        const elements = [
+            this._upperLeftEyelid, this._upperRightEyelid,
+            this._lowerLeftEyelid, this._lowerRightEyelid
+        ];
+        elements.forEach(el => {
+            if (el) {
+                el.getAnimations().forEach(animation => animation.cancel());
+            }
+        });
     }
 
     express({
@@ -45,16 +57,18 @@ class EyeController {
         enterDuration = 75,
         exitDuration = 75,
     }) {
-        console.log(`Expressing emotion: ${type}`);  // Debugging log
+        console.log(`Expressing emotion: ${type}`);
 
         if (!this._leftEye) {
             console.warn('Eye elements are not set; returning.');
             return;
         }
 
-        const options = { duration: duration };
+        this.clearAnimations();
 
-        switch(type) {
+        const options = { duration: duration, fill: 'forwards' };
+
+        switch (type) {
             case 'happy':
                 return {
                     lowerLeftEyelid: this._lowerLeftEyelid.animate(this._createKeyframes({
@@ -70,7 +84,6 @@ class EyeController {
                         exitingOffset: 1 - (exitDuration / duration),
                     }), options),
                 };
-
             case 'sad':
                 return {
                     upperLeftEyelid: this._upperLeftEyelid.animate(this._createKeyframes({
@@ -86,7 +99,6 @@ class EyeController {
                         exitingOffset: 1 - (exitDuration / duration),
                     }), options),
                 };
-
             case 'angry':
                 return {
                     upperLeftEyelid: this._upperLeftEyelid.animate(this._createKeyframes({
@@ -102,7 +114,6 @@ class EyeController {
                         exitingOffset: 1 - (exitDuration / duration),
                     }), options),
                 };
-
             case 'focused':
                 return {
                     upperLeftEyelid: this._upperLeftEyelid.animate(this._createKeyframes({
@@ -115,18 +126,7 @@ class EyeController {
                         enteredOffset: enterDuration / duration,
                         exitingOffset: 1 - (exitDuration / duration),
                     }), options),
-                    lowerLeftEyelid: this._lowerLeftEyelid.animate(this._createKeyframes({
-                        tgtTranYVal: `calc(${this._eyeSize} * -1 / 3)`,
-                        enteredOffset: enterDuration / duration,
-                        exitingOffset: 1 - (exitDuration / duration),
-                    }), options),
-                    lowerRightEyelid: this._lowerRightEyelid.animate(this._createKeyframes({
-                        tgtTranYVal: `calc(${this._eyeSize} * -1 / 3)`,
-                        enteredOffset: enterDuration / duration,
-                        exitingOffset: 1 - (exitDuration / duration),
-                    }), options),
                 };
-
             case 'confused':
                 return {
                     upperRightEyelid: this._upperRightEyelid.animate(this._createKeyframes({
@@ -136,14 +136,13 @@ class EyeController {
                         exitingOffset: 1 - (exitDuration / duration),
                     }), options),
                 };
-
             default:
                 console.warn(`Invalid input type=${type}`);
         }
     }
 }
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
     console.log("Document fully loaded, initializing eyes...");
 
     window.eyes = new EyeController({
