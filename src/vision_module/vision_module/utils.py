@@ -5,12 +5,7 @@ import os
 # import mediapipe as mp
 import numpy as np
 from deepface import DeepFace ## pip install deepface
-
-# # Initialize MediaPipe FaceMesh
-# mp_face_mesh = mp.solutions.face_mesh
-# mp_drawing = mp.solutions.drawing_utils
-# face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, refine_landmarks=True)
-# video_in = None
+video_in = None
 
 def initialize_camera(camera_index):
     global video_in
