@@ -2,6 +2,8 @@
 
 This guide sets up a Python virtual environment (venv) for your ROS2 workspace while preventing conflicts during `colcon build`. It also ensures that Python dependencies inside the virtual environment are properly recognized.
 
+Skip step 1.
+Replace FYDP HARP with the folder you're environment is in.
 ## Setup Instructions
 
 ### 1️⃣ Create Your ROS2 Workspace
@@ -17,7 +19,7 @@ python3 -m venv venv
 This creates a `venv` inside `FYDP_HARP`.
 
 ### 3️⃣ Create a ROS2 Package
-If you haven’t created a package yet, do so:
+If you want to create a new ros2 package:
 ```bash
 cd src
 ros2 pkg create my_package --build-type ament_python --dependencies rclpy
