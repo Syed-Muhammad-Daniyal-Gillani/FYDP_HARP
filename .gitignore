@@ -3,8 +3,6 @@ build/
 install/
 log/
 venv/
-#My PC's venv
-ros2_venv/ 
 
 # Ignore Python cache files
 __pycache__/
