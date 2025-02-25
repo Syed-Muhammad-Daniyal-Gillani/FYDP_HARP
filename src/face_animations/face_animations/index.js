@@ -136,10 +136,73 @@ class EyeController {
                         exitingOffset: 1 - (exitDuration / duration),
                     }), options),
                 };
+            case 'neutral':
+                return {
+                    
+                }
             default:
                 console.warn(`Invalid input type=${type}`);
         }
     }
+
+    blink({
+        duration = 150,  // in ms
+      } = {}) {
+        if (!this._leftEye) {  // assumes all elements are always set together
+          console.warn('Eye elements are not set; return;');
+          return;
+        }
+    
+        [this._leftEye, this._rightEye].map((eye) => {
+          eye.animate([
+            {transform: 'rotateX(0deg)'},
+            {transform: 'rotateX(90deg)'},
+            {transform: 'rotateX(0deg)'},
+          ], {
+            duration,
+            iterations: 1,
+          });
+        });
+      }
+    
+    startBlinking({
+        maxInterval = 5000
+      } = {}) {
+        if (this._blinkTimeoutID) {
+          console.warn(`Already blinking with timeoutID=${this._blinkTimeoutID}; return;`);
+          return;
+        }
+        const blinkRandomly = (timeout) => {
+          this._blinkTimeoutID = setTimeout(() => {
+            this.blink();
+            blinkRandomly(Math.random() * maxInterval);
+          }, timeout);
+        }
+        blinkRandomly(Math.random() * maxInterval);
+      }
+    
+    stopBlinking() {
+        clearTimeout(this._blinkTimeoutID);
+        this._blinkTimeoutID = null;
+      }
+    
+      setEyePosition(eyeElem, x, y, isRight = false) {
+        if (!eyeElem) {  // assumes all elements are always set together
+          console.warn('Invalid inputs ', eyeElem, x, y, '; retuning');
+          return;
+        }
+    
+        if (!!x) {
+          if (!isRight) {
+            eyeElem.style.left = `calc(${this._eyeSize} / 3 * 2 * ${x})`;
+          } else {
+            eyeElem.style.right = `calc(${this._eyeSize} / 3 * 2 * ${1-x})`;
+          }
+        }
+        if (!!y) {
+          eyeElem.style.bottom = `calc(${this._eyeSize} / 3 * 2 * ${1-y})`;
+        }
+      }
 }
 
 document.addEventListener("DOMContentLoaded", function () {

@@ -22,7 +22,7 @@ class FaceAnimationNode(Node):
 
     def emotion_callback(self, msg):
         emotion = msg.data.lower().strip()
-        valid_emotions = ["happy", "sad", "angry", "focused", "confused"]
+        valid_emotions = ["happy", "sad", "angry", "focused", "surprise", "neutral"]
 
         if emotion in valid_emotions and emotion != self.current_emotion:
             self.current_emotion = emotion

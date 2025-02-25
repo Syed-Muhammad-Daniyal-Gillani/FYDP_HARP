@@ -72,11 +72,14 @@
               case 'angry':
                   eyes.express({ type: 'angry' });
                   break;
-              case 'focused':
+              case 'surprise':
                   eyes.express({ type: 'focused' });
                   break;
               case 'confused':
                   eyes.express({ type: 'confused' });
+                  break;
+              case 'neutral':
+                  eyes.express( {type: 'neutral' });
                   break;
               default:
                   console.log('Unknown emotion:', message.data);
