@@ -25,17 +25,20 @@ def generate_launch_description():
             name='Neck',
             output = 'screen'
         ),
-        # Node(
-        #     package='rosbridge_server',
-        #     executable='rosbridge_websocket',
-        #     name='ROSBridge_Local_Server',
-        #     output = 'screen'            
-        # )
-        # Rosbridge WebSocket (Runs Outside Venv)
-        # rosbridge_server runs outside venv
+        Node(
+            package='rosbridge_server',
+            executable='rosbridge_websocket',
+            name='ROSBridge_Local_Server',
+            output = 'screen'            
+        )
+        # # Rosbridge WebSocket (Runs Outside Venv)
         # ExecuteProcess(
-        #     cmd=['/opt/ros/humble', '-m', 'rosbridge_server.rosbridge_websocket'],
-        #     output='screen'
+        #     cmd=['/usr/bin/python3', '-m', 'rosbridge_server.rosbridge_websocket'],
+        #     output='screen',
+        #     env={
+        #         'PYTHONPATH': '/opt/ros/humble/lib/python3.10/site-packages:' + os.environ.get('PYTHONPATH', ''),
+        #         'PATH': '/usr/bin:' + os.environ.get('PATH', ''),
+        #     }
         # )
 
     ])
