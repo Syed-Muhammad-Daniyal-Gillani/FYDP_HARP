@@ -53,10 +53,14 @@ ros2 run my_package my_node
 ```
 
 ## Notes
-- Due to compatibility issues between `ROS2` and `venv`, You may need to run `rosbridge server` independently outisde the venv. In order to do so, comment out the following lines from src/launch_harp/launch/launch_harp.py
+- Due to compatibility issues between `ROS2` and `venv`, You may need to run `rosbridge server` independently outisde the venv. In order to do so, comment out the following lines from src/launch_harp/launch/launch_harp.py and follow the `How to Launch` instructions.
 ```bash
-cd ~/FYDP_HARP
-colcon build
+        Node(
+            package='rosbridge_server',
+            executable='rosbridge_websocket',
+            name='ROSBridge_Local_Server',
+            output = 'screen'            
+        )
 ```
 - If you encounter `pytest` warnings or errors, comment out related lines in `setup.py`.
 - This method ensures colcon ignores the virtual environment while still recognizing dependencies.
