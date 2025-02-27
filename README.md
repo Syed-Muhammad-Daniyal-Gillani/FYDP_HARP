@@ -1,14 +1,18 @@
 # ROS2 Environment Setup
 ## Initial Setup
 - Pull the repo using `git pull https://github.com/CEME-HARP/ros2-desktop-integration.git`
-- Run `gedit ~/.bashrc` and add the following line at the end of the document `source ~/ROS_FYDP/install/setup.bash`
+- Run `gedit ~/.bashrc` and add the following line at the end of the document `source ~/ros2humble_integration/install/setup.bash`
 - Go to the repo directory by typing `cd ros2humble_integration` in terminal
 - If you want to create a virtual environment, refer to its guide below, otherwise run `pip install -r requirements.txt`  #to install all dependencies
 - Run `colcon build` and then source `install/setup.bash` in terminal.
 
-## Launch workspace
+## Launch workspace (no venv)
 - Run `ros2 launch launch_harp launch_harp.py` to run the project.
 
+## Launch workspace (with venv)
+- Open a secondary terminal and type `deactivate` if venv activates automatically to deactivate it.
+- Run `ros2 run rosbridge_server rosbridge_websocket`. (Make sure to comment out rosbridge node from launch file given in guide notes below)
+- In another terminal with venv activated, run `ros2 launch launch_harp launch_harp.py` to run the project.
 
 
 # ROS2 Workspace with Virtual Environment Setup (NOT RECOMMENDED see notes)
