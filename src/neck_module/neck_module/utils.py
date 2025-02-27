@@ -2,7 +2,7 @@ import cv2
 import serial
 video_in = None
 # PID Controller constants [Kp, Kd, Ki]
-pid = [3, 1, 2]
+pid = [6, 1, 2]
 
 class RobotNeck:
     def __init__(self, serial_port='/dev/ttyACM0', baud_rate=9600):
