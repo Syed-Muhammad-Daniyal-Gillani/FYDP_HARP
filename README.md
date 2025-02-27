@@ -1,6 +1,6 @@
 # ROS2 Environment Setup
 ## Initial Setup
-- Pull the repo using `git pull https://github.com/CEME-HARP/ros2-desktop-integration.git`
+- CLone the repo using `git clone https://github.com/CEME-HARP/ros2-desktop-integration.git`
 - Run `gedit ~/.bashrc` and add the following line at the end of the document `source ~/ros2humble_integration/install/setup.bash`
 - Go to the repo directory by typing `cd ros2humble_integration` in terminal
 - If you want to create a virtual environment, refer to its guide below, otherwise run `pip install -r requirements.txt`  #to install all dependencies
