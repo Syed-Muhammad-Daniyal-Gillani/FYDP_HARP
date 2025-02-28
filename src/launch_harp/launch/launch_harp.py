@@ -8,7 +8,7 @@ def generate_launch_description():
 
         Node(
             package='vision_module',
-            executable='face_tracker',
+            executable='harp_vision',
             name='Vision',
             output = 'screen'
         ),

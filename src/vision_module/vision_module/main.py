@@ -11,9 +11,9 @@ FRAME_HEIGHT = 480
 # Initialize camera
 initialize_camera(0)  # Change to 1 for external camera
 
-class FaceTracker(Node):
+class HARP_Vision(Node):
     def __init__(self):
-        super().__init__('face_tracker')
+        super().__init__('harp_vision')
         self.publisher_ = self.create_publisher(Float32MultiArray, 'neck_coordinates', 1)
         self.emotion_publisher = self.create_publisher(String, 'user_emotions', 1)
         self.timer = self.create_timer(0.03, self.track_face)  # Runs every 0.03 seconds (~33Hz)
@@ -49,7 +49,7 @@ class FaceTracker(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = FaceTracker()
+    node = HARP_Vision()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
