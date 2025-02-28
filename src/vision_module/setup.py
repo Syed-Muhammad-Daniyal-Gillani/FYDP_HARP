@@ -20,7 +20,7 @@ setup(
     license='MIT',
     entry_points={
         'console_scripts': [
-            'face_tracker = vision_module.main:main',
+            'harp_vision = vision_module.main:main',
         ],
     },
 )
