@@ -4,7 +4,7 @@ from std_msgs.msg import String
 import webbrowser
 import os
 
-package_path = os.path.expanduser("~/ROS_FYDP/src/face_animations/face_animations")
+package_path = os.path.expanduser("~/ros2_harp/src/face_animations/face_animations")
 
 
 class FaceAnimationNode(Node):
