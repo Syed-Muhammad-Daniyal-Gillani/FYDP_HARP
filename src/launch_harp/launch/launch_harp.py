@@ -25,12 +25,12 @@ def generate_launch_description():
             name='Neck',
             output = 'screen'
         ),
-        # Node(
-        #     package='rosbridge_server',
-        #     executable='rosbridge_websocket',
-        #     name='ROSBridge_Local_Server',
-        #     output = 'screen'            
-        # )
+        Node(
+            package='rosbridge_server',
+            executable='rosbridge_websocket',
+            name='ROSBridge_Local_Server',
+            output = 'screen'            
+        )
 
 
     ])
