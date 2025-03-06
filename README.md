@@ -1,4 +1,6 @@
 # ROS2 Environment Setup
+## Prerequisites
+- Ensure ROS2 Humble has been properly installed. Follow the setup guide `https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html`
 ## Initial Setup
 ### Run the following commands in terminal
 - Clone the repo using 
