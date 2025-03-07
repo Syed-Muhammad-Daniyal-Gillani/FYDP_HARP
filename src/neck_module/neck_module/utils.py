@@ -1,5 +1,6 @@
 import cv2
 import serial
+import time
 video_in = None
 # PID Controller constants [Kp, Kd, Ki]
 pid = [6, 1, 2]
@@ -57,3 +58,30 @@ def trackFace(neck, info, pid, pre_error_x, pre_error_y, tolerance_x=0.1, tolera
         correction_x, correction_y = 0, 0
 
     return correction_x, correction_y
+
+def searchFace(neck, face_detected_callback, search_positions=None, delay=0.5):
+
+    if search_positions is None:
+        search_positions = [
+            (90, 70),  # Center
+            (45, 70),  # Left
+            (135, 70), # Right
+            (90, 50),  # Up
+            (90, 90),  # Down
+            (90, 70),  # Reset to Center
+        ]
+
+    for yaw, pitch in search_positions:
+        # Before moving, check if a face is detected
+        if face_detected_callback():
+            print("Face detected! Stopping search immediately.")
+            break  # Exit loop early
+
+        # Move the servos to a new position
+        neck.move_servo(yaw, pitch)
+        time.sleep(delay)  # Wait before next movement
+
+        # Check again after movement
+        if face_detected_callback():
+            print("Face detected! Stopping search immediately.")
+            break

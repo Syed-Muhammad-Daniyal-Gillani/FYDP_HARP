@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray, String
-from neck_module.utils import RobotNeck, trackFace, pid
+from neck_module.utils import RobotNeck, trackFace, pid, searchFace
 
 class NeckController(Node):
     def __init__(self):
@@ -17,7 +17,7 @@ class NeckController(Node):
 
         self.search_subscription = self.create_subscription(
             String,
-            'look_around',
+            '/look_around',
             self.lookaround_callback,
             1
         )
@@ -51,12 +51,19 @@ class NeckController(Node):
             
     
     def lookaround_callback(self, msg):
-        msg = String()
-        self.get_logger().info("Recieved lookaround message")
-        if msg.data == "lookaround" and not self.search_face:
+        command = msg.data.lower().strip()
+        self.get_logger().info(f"Received command: {command}")
+
+        if command == "lookaround" and not self.search_face:
             self.search_face = True
             self.get_logger().info("Starting lookaround mode...")
 
+            def face_detected():
+                return not self.search_face  # If tracking starts, a face is found
+
+            searchFace(self.robot_neck, face_detected)  # Start searching
+
+            self.search_face = False  # Reset after search
 
     def destroy(self):
         """Clean up resources."""
