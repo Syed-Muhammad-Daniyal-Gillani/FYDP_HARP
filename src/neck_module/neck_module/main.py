@@ -61,7 +61,7 @@ class NeckController(Node):
             def face_detected():
                 return not self.search_face  # If tracking starts, a face is found
 
-            searchFace(self.robot_neck, face_detected)  # Start searching
+            searchFace(self.robot_neck, face_detected())  # Start searching
 
             self.search_face = False  # Reset after search
 

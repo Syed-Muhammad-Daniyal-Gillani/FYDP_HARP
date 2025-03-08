@@ -8,7 +8,7 @@ pid = [6, 1, 2]
 class RobotNeck:
     def __init__(self, serial_port='/dev/ttyACM0', baud_rate=9600):
         self.servo_yaw = 90  # Default yaw angle (horizontal)
-        self.servo_pitch = 70  # Default pitch angle (vertical)
+        self.servo_pitch = 40  # Default pitch angle (vertical)
         self.serial_conn = serial.Serial(serial_port, baud_rate)
 
     def move_servo(self, yaw_angle, pitch_angle):
@@ -17,8 +17,8 @@ class RobotNeck:
         :param yaw_angle: Desired yaw angle in degrees (0-180).
         :param pitch_angle: Desired pitch angle in degrees (0-180).
         """
-        yaw_angle = max(0, min(180, yaw_angle))  # Constrain angle between 0 and 180
-        pitch_angle = max(0, min(180, pitch_angle))  # Constrain angle between 0 and 180
+        yaw_angle = max(20, min(90, yaw_angle))  # Constrain angle between 20 and 90
+        pitch_angle = max(40, min(70, pitch_angle))  # Constrain angle between 40 and 70
 
         print(f"Moving servos - Yaw: {yaw_angle}, Pitch: {pitch_angle}")
         self.serial_conn.write(f"Y{yaw_angle}P{pitch_angle}\n".encode())  # Send to ESP32
@@ -59,16 +59,16 @@ def trackFace(neck, info, pid, pre_error_x, pre_error_y, tolerance_x=0.1, tolera
 
     return correction_x, correction_y
 
-def searchFace(neck, face_detected_callback, search_positions=None, delay=0.5):
+def searchFace(neck, face_detected_callback, search_positions=None, delay=2):
 
     if search_positions is None:
         search_positions = [
-            (90, 70),  # Center
-            (45, 70),  # Left
-            (135, 70), # Right
-            (90, 50),  # Up
-            (90, 90),  # Down
-            (90, 70),  # Reset to Center
+            (20, 55),  # Center
+            (55, 55),  # Left
+            (90, 55), # Right
+            (90, 40),  # Up
+            (55, 70),  # Down
+            (55, 50),  # Reset to Center
         ]
 
     for yaw, pitch in search_positions:
