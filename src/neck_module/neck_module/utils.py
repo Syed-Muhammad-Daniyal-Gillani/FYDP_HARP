@@ -6,8 +6,8 @@ pid = [6, 1, 2]
 
 class RobotNeck:
     def __init__(self, serial_port='/dev/ttyACM0', baud_rate=9600):
-        self.servo_yaw = 90  # Default yaw angle (horizontal)
-        self.servo_pitch = 70  # Default pitch angle (vertical)
+        self.servo_yaw = 55  # Default yaw angle (horizontal)
+        self.servo_pitch = 55  # Default pitch angle (vertical)
         self.serial_conn = serial.Serial(serial_port, baud_rate)
 
     def move_servo(self, yaw_angle, pitch_angle):
@@ -16,8 +16,8 @@ class RobotNeck:
         :param yaw_angle: Desired yaw angle in degrees (0-180).
         :param pitch_angle: Desired pitch angle in degrees (0-180).
         """
-        yaw_angle = max(0, min(180, yaw_angle))  # Constrain angle between 0 and 180
-        pitch_angle = max(0, min(180, pitch_angle))  # Constrain angle between 0 and 180
+        yaw_angle = max(20, min(90, yaw_angle))  # Constrain angle between 0 and 180
+        pitch_angle = max(40, min(70, pitch_angle))  # Constrain angle between 0 and 180
 
         print(f"Moving servos - Yaw: {yaw_angle}, Pitch: {pitch_angle}")
         self.serial_conn.write(f"Y{yaw_angle}P{pitch_angle}\n".encode())  # Send to ESP32
