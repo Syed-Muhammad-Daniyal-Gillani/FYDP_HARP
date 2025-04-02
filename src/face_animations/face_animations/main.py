@@ -1,11 +1,22 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
-import webbrowser
 import os
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtCore import QUrl  # Import QUrl
 
 package_path = os.path.expanduser("~/ros2_harp/src/face_animations/face_animations")
+file_url = f"file://{package_path}/index.html"
 
+class FaceAnimationWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.browser = QWebEngineView()
+        self.browser.setUrl(QUrl(file_url))  # Convert string to QUrl
+        self.setCentralWidget(self.browser)
+        self.showFullScreen()  # Open in fullscreen
 
 class FaceAnimationNode(Node):
     def __init__(self):
@@ -16,9 +27,11 @@ class FaceAnimationNode(Node):
             self.emotion_callback,
             10)
         self.current_emotion = "neutral"
-
-        # Open the browser with local HTML file
-        webbrowser.open(f"file://{package_path}/index.html")
+        
+        # Launch PyQt window
+        self.app = QApplication(sys.argv)
+        self.window = FaceAnimationWindow()
+        self.app.exec_()
 
     def emotion_callback(self, msg):
         emotion = msg.data.lower().strip()
