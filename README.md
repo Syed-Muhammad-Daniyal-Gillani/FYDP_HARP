@@ -30,6 +30,11 @@ source ~/ros2_harp/install/setup.bash
 ``` bash
  pip install -r requirements.txt #to install all dependencies
 ```  
+- Then run the followin command in terminal
+``` bash
+sudo apt update
+sudo apt install python3-pyqt5 python3-pyqt5.qtwebengine
+```  
 - Build the project using
 ``` bash
  colcon build
