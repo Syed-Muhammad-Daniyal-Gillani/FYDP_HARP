@@ -1,5 +1,6 @@
 import cv2
 import serial
+import serial.tools.list_ports
 video_in = None
 # PID Controller constants [Kp, Kd, Ki]
 pid = [6, 1, 2]
@@ -57,3 +58,11 @@ def trackFace(neck, info, pid, pre_error_x, pre_error_y, tolerance_x=0.1, tolera
         correction_x, correction_y = 0, 0
 
     return correction_x, correction_y
+
+def find_esp32_port():
+    """Scan all serial ports and return the correct ESP32 port."""
+    ports = serial.tools.list_ports.comports()
+    for port in ports:
+        if "USB Single Serial" in port.description:  # Check if the device is a USB device (adjust as needed)
+            return port.device
+    raise Exception("ESP32 not found!")
