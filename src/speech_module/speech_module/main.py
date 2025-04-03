@@ -5,7 +5,7 @@ import pyttsx3
 import sounddevice as sd
 import numpy as np
 import wave
-
+from ollama import Client
 # # Load Personality from PDF
 # pdf_path = "/home/mak/Documents/local_llm_code/personality.pdf"
 # def load_personality_from_pdf(pdf_path):
@@ -81,6 +81,10 @@ def ask_llm(user_input):
     
     Assistant:
     """
+    client = Client(
+    host='http://localhost:11434',
+    headers={'x-some-header': 'some-value'}
+    )
     
     # Stream response from Ollama
     stream = ollama.chat(model="mistral", messages=[{"role": "user", "content": prompt}], stream=True)
