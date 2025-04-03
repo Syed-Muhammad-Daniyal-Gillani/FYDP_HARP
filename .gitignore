@@ -27,6 +27,6 @@ venv/
 *.mp4
 *.avi
 *.mkv
-
+*.wav
 # Ignore package-specific secrets (if any)
 secrets.yaml
