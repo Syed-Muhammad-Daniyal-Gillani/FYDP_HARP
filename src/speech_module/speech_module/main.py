@@ -1,147 +1,126 @@
-import os
-import logging
-import datetime
+import ollama
+import pdfplumber
 import whisper
-from langchain_ollama import ChatOllama, OllamaEmbeddings
-from langchain_community.vectorstores import Chroma
-from langchain_text_splitters import CharacterTextSplitter
-from langchain.chains import create_retrieval_chain
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.prompts import PromptTemplate
-import pyaudio
+import pyttsx3
+import sounddevice as sd
+import numpy as np
 import wave
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# # Load Personality from PDF
+# pdf_path = "/home/mak/Documents/local_llm_code/personality.pdf"
+# def load_personality_from_pdf(pdf_path):
+#     """Extracts text from the Personality.pdf file."""
+#     try:
+#         with pdfplumber.open(pdf_path) as pdf:
+#             text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+#         return text.strip()
+#     except Exception as e:
+#         print(f"Error loading personality document: {e}")
+#         return ""
 
-# Global variables
-llm = None
-embeddings = None
-pages = None
-retrieval_chain = None
-
-# Initialize Whisper model
-whisper_model = whisper.load_model("small")
-
-def ask_ollama(user_query, context):
-    if context:
-        prompt = f"{user_query}\n\nAccording to the schedule: \n{context} "
-    else:
-        prompt = user_query
-
+# Record Audio Function
+def record_audio(filename="input.wav", duration=5, samplerate=16000):
+    """Records audio from the microphone and saves it to a WAV file."""
+    print("Listening...")
     try:
-        response = llm.predict(prompt)
-        return response
+        audio_data = sd.rec(int(duration * samplerate), samplerate=samplerate, channels=1, dtype=np.int16)
+        sd.wait()  # Wait until recording is finished
+
+        # Check if the audio is silent (all zeros)
+        if np.max(np.abs(audio_data)) < 500:
+            print("No significant audio detected. Try speaking louder.")
+            return None
+
+        with wave.open(filename, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(samplerate)
+            wf.writeframes(audio_data.tobytes())
+
+        return filename
     except Exception as e:
-        logging.error(f"An error occurred: {e}")
+        print(f"Error recording audio: {e}")
         return None
 
-def initialize_components():
-    global llm, embeddings, pages, retrieval_chain
 
-    llm = ChatOllama(model="gemma2:2b")
-    embeddings = OllamaEmbeddings(model="gemma2:2b")
+# Whisper Speech-to-Text Function
+def transcribe_audio(filename="input.wav"):
+    """Transcribes recorded speech using OpenAI's Whisper model."""
+    try:
+        model = whisper.load_model("small", device="cuda")
+	 # Use 'base', 'small', 'medium', or 'large'
+        result = model.transcribe(filename)
+        return result["text"].strip()
+    except Exception as e:
+        print(f"Error in speech recognition: {e}")
+        return None
 
-    loader = PyPDFLoader("/home/mak/Documents/local_llm_code/newdata.pdf")
-    text_splitter = CharacterTextSplitter(
-        separator=".",
-        chunk_size=2000,
-        chunk_overlap=1000,
-        length_function=len,
-        is_separator_regex=False,
-    )
-    pages = loader.load_and_split(text_splitter)
+# Text-to-Speech Function
+def speak(text):
+    """Converts text to speech and plays it."""
+    engine = pyttsx3.init()
+    engine.setProperty("rate", 170)  # Adjust speech speed
+    engine.say(text)
+    engine.runAndWait()
 
-    vectordb = Chroma.from_documents(pages, embeddings)
-    retriever = vectordb.as_retriever(search_kwargs={"k": min(5, len(pages))})
+# LLM Query Function
+def ask_llm(user_input, personality_text):
+    """Queries the local Mistral LLM with a personality-based prompt."""
+    prompt = f"""
+    {personality_text}
 
-    prompt_template = """You are HARP, a Humanoid Assistant Robot. You assist people with their queries in a friendly and natural manner.
-    If the answer is not in the provided context, just say "Sorry, I couldn't find any specific data on that. Can you specify which professor or topic you are asking about?"
-
-    context:
-    {context}?
-
-    input:
-    {input}
-
-    answer:
+    User: {user_input}
+    
+    Assistant:
     """
-    prompt = PromptTemplate.from_template(prompt_template)
+    
+    # Stream response from Ollama
+    stream = ollama.chat(model="mistral", messages=[{"role": "user", "content": prompt}], stream=True)
+    
+    response_text = ""
+    print("\nAssistant: ", end="")
 
-    combine_docs_chain = create_stuff_documents_chain(llm, prompt)
-    retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
+    for chunk in stream:
+        if "message" in chunk and "content" in chunk["message"]:
+            text = chunk["message"]["content"]
+            response_text += text
+            print(text, end="", flush=True)  # Live output
+    
+    print("\n")  # Ensure newline after response
+    return response_text
 
-def get_current_datetime():
-    now = datetime.datetime.now()
-    current_day = now.strftime("%A")
-    current_date = now.strftime("%Y-%m-%d")
-    current_time = now.strftime("%H:%M")
-    return current_day, current_date, current_time
-
-def record_audio(filename, duration=5, rate=16000, chunk=1024):
-    p = pyaudio.PyAudio()
-    stream = p.open(format=pyaudio.paInt16, channels=1, rate=rate, input=True, frames_per_buffer=chunk)
-
-    frames = []
-    print("Listening...")
-    for _ in range(0, int(rate / chunk * duration)):
-        data = stream.read(chunk)
-        frames.append(data)
-
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-
-    with wave.open(filename, 'wb') as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
-        wf.setframerate(rate)
-        wf.writeframes(b''.join(frames))
-
+# Main Loop
 def main():
-    global pages, retrieval_chain
+    # pdf_path = "/home/mak/Documents/local_llm_code/personality.pdf"
+    # personality_text = load_personality_from_pdf(pdf_path)
 
-    query_counter = 0
-    initialize_components()
+    # if not personality_text:
+    #     print("Failed to load personality profile. Exiting...")
+    #     return
+
+    print("\nAssistant is active. Speak something...")
 
     while True:
-        try:
-            audio_file = "temp_audio.wav"
-            record_audio(audio_file)
+        audio_file = record_audio()
+        if not audio_file:
+            print("Retrying...")
+            continue  # Try recording again if no valid audio
 
-            result = whisper_model.transcribe(audio_file)
-            query = result["text"].strip()
-            print(f"You said: {query}")
+        user_input = transcribe_audio(audio_file)
+        if not user_input:
+            print("Could not understand audio. Try again.")
+            continue  # Retry if no transcription
 
-            if any(keyword.lower() in query.lower() for keyword in ["quit", "stop", "Allah Hafiz", "bye"]):
-                print("Enjoyed talking to you. If you need any help in the future, you can ask me.")
-                break
+        print(f"\nYou: {user_input}")
 
-            if any(keyword in query.lower() for keyword in ["today", "time", "date", "day"]):
-                current_day, current_date, current_time = get_current_datetime()
-                datetime_info = f"Today is {current_day}, {current_date}. The current time is {current_time}."
-                query = f"{query}\n\n{datetime_info}"
+        if user_input.lower() in ["quit", "exit", "stop"]:
+            print("Goodbye!")
+            break
 
-            response = retrieval_chain.invoke({"input": query})
-            result = response["answer"]
+        # response = ask_llm(user_input, personality_text)
+        response = ask_llm(user_input)
+        speak(response)  # Convert response to speech
 
-            if result and "I couldn't find any specific data on that." not in result:
-                print('Answers Generated By RAG')
-                print(result)
-            else:
-                print('Answers Generated By Ollama')
-                pdf_content = "\n".join(page.page_content for page in pages)
-                ollama_response = ask_ollama(query, pdf_content)
-                print(ollama_response)
-
-            query_counter += 1
-            if query_counter >= 3:
-                initialize_components()
-                query_counter = 0
-
-        except Exception as e:
-            print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
