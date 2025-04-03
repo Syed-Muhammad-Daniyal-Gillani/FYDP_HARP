@@ -1,5 +1,5 @@
 import ollama
-import pdfplumber
+# import pdfplumber
 import whisper
 import pyttsx3
 import sounddevice as sd
@@ -47,7 +47,8 @@ def record_audio(filename="input.wav", duration=5, samplerate=16000):
 def transcribe_audio(filename="input.wav"):
     """Transcribes recorded speech using OpenAI's Whisper model."""
     try:
-        model = whisper.load_model("small", device="cuda")
+        # model = whisper.load_model("small", device="cuda") uncomment for Cuda enabled
+        model = whisper.load_model("small", device="cpu")
 	 # Use 'base', 'small', 'medium', or 'large'
         result = model.transcribe(filename)
         return result["text"].strip()
@@ -64,11 +65,18 @@ def speak(text):
     engine.runAndWait()
 
 # LLM Query Function
-def ask_llm(user_input, personality_text):
+# def ask_llm(user_input, personality_text): uncomment for Personality
+def ask_llm(user_input):
     """Queries the local Mistral LLM with a personality-based prompt."""
-    prompt = f"""
-    {personality_text}
+    #uncomment for Personality
+    # prompt = f"""
+    # {personality_text}
 
+    # User: {user_input}
+    
+    # Assistant:
+    # """
+    prompt = f"""
     User: {user_input}
     
     Assistant:
