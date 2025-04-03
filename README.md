@@ -1,18 +1,59 @@
 # ROS2 Environment Setup
+## Prerequisites
+- Ensure ROS2 Humble has been properly installed. Follow the setup guide `https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html`
 ## Initial Setup
-- CLone the repo using `git clone https://github.com/CEME-HARP/ros2-desktop-integration.git`
-- Run `gedit ~/.bashrc` and add the following line at the end of the document `source ~/ros2humble_integration/install/setup.bash`
-- Go to the repo directory by typing `cd ros2humble_integration` in terminal
-- If you want to create a virtual environment, refer to its guide below, otherwise run `pip install -r requirements.txt`  #to install all dependencies
-- Run `colcon build` and then source `install/setup.bash` in terminal.
+### Run the following commands in terminal
+- Clone the repo using 
+```bash
+git clone https://github.com/CEME-HARP/ros2_harp.git
+```
+- Run 
+``` bash
+ gedit ~/.bashrc
+```
+ and add the following line at the end of the document. Then restart the terminal.
+``` bash 
+source ~/ros2_harp/install/setup.bash
+```
+
+- Ensure rosbridge is installed.
+``` bash
+ sudo apt install ros-humble-rosbridge-server
+```
+
+- Go to the repo directory. 
+``` bash
+ cd ros2_harp
+ ``` 
+ 
+- If you want to create a virtual environment, refer to its guide below, otherwise run 
+``` bash
+ pip install -r requirements.txt #to install all dependencies
+```  
+- Build the project using
+``` bash
+ colcon build
+```
+ Run 
+``` bash
+ source install/setup.bash
+```
 
 ## Launch workspace (no venv)
-- Run `ros2 launch launch_harp launch_harp.py` to run the project.
+- Run 
+``` bash
+ ros2 launch launch_harp launch_harp.py
+```
+ to run the project.
 
 ## Launch workspace (with venv)
-- Open a secondary terminal and type `deactivate` if venv activates automatically to deactivate it.
-- Run `ros2 run rosbridge_server rosbridge_websocket`. (Make sure to comment out rosbridge node from launch file given in guide notes below)
-- In another terminal with venv activated, run `ros2 launch launch_harp launch_harp.py` to run the project.
+- Open a secondary terminal and type ```deactivate``` if venv activates automatically to deactivate it.
+- Run 
+``` bash
+ ros2 run rosbridge_server rosbridge_websocket
+```
+. (Make sure to comment out rosbridge node from launch file given in guide notes below)
+- In another terminal with venv activated, run ``` bash ros2 launch launch_harp launch_harp.py``` to run the project.
 
 
 # ROS2 Workspace with Virtual Environment Setup (NOT RECOMMENDED see notes)
@@ -72,7 +113,4 @@ ros2 run my_package my_node
             output = 'screen'            
         )
 ```
-- If you encounter `pytest` warnings or errors, comment out related lines in `setup.py`.
-- This method ensures colcon ignores the virtual environment while still recognizing dependencies.
-- Works with other ROS2 distros as long as Python versions match.
-
+- If you encounter `pytest` warnings or errors, comment out related lines in `setup.py` of each individual module folder.
