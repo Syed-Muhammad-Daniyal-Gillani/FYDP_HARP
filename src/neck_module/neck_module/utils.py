@@ -66,3 +66,6 @@ def find_esp32_port():
         if "USB Single Serial" in port.description:  # Check if the device is a USB device (adjust as needed)
             return port.device
     raise Exception("ESP32 not found!")
+
+def lookAround():
+    return

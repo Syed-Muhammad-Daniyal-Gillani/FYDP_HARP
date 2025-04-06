@@ -1,7 +1,8 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
-from neck_module.utils import RobotNeck, trackFace, pid, find_esp32_port
+from std_srvs.srv import Trigger
+from neck_module.utils import RobotNeck, trackFace, pid, find_esp32_port, lookAround
 class NeckController(Node):
     def __init__(self):
         super().__init__('neck_controller')
@@ -13,6 +14,7 @@ class NeckController(Node):
             self.listener_callback,
             1  
         )
+        self.srv = self.create_service(Trigger, 'trigger_lookaround_callback', self.lookaround_request_handle)
         esp32_port = find_esp32_port()
         
         # Initialize neck movement
@@ -32,6 +34,13 @@ class NeckController(Node):
             self.pre_error_x, self.pre_error_y = trackFace(
                 self.robot_neck, (normalized_x, normalized_y), pid, self.pre_error_x, self.pre_error_y
             )
+
+    def lookaround_request_handle(self, msg, request, response): 
+        # Detect and publish emotion only if it has changed
+        while len(msg.data) < 2:
+            lookAround() #Call the look around function
+
+        return response
 
     def destroy(self):
         """Clean up resources."""
