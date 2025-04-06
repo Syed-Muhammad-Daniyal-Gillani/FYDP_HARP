@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import QUrl  # Import QUrl
 
-package_path = os.path.expanduser("~/ros2_harp/src/face_animations/face_animations")
+package_path = os.path.expanduser("~/fydp_harp/src/face_animations/face_animations")
 file_url = f"file://{package_path}/index.html"
 
 class FaceAnimationWindow(QMainWindow):

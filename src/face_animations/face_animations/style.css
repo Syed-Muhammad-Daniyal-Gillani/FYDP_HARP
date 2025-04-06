@@ -42,11 +42,11 @@
   }
   
   .eye.left {
-    left: calc(var(--eye-size) / 1.75);
+    left: calc(var(--eye-size) / 1.5); /*Change the value in denominator to adjust distance between eyes*/
   }
   
   .eye.right {
-    right: calc(var(--eye-size) / 1.75);
+    right: calc(var(--eye-size) / 1.5); /*Change the value in denominator to adjust distance between eyes*/
   }
   
   .eyelid {
