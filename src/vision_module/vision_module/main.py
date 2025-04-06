@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray, String
+from std_srvs.srv import Trigger
 from vision_module.utils import *
 import cv2
 
@@ -15,9 +16,8 @@ class HARP_Vision(Node):
     def __init__(self):
         super().__init__('harp_vision')
         self.publisher_ = self.create_publisher(Float32MultiArray, 'neck_coordinates', 1)
-        self.emotion_publisher = self.create_publisher(String, 'user_emotions', 1)
         self.timer = self.create_timer(0.03, self.track_face)  # Runs every 0.03 seconds (~33Hz)
-        self.last_emotion = None  # Store last detected emotion
+        self.srv = self.create_service(Trigger, 'trigger_emotion_request', self.emotion_request_handle)
 
     def track_face(self):
         cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)
@@ -29,23 +29,27 @@ class HARP_Vision(Node):
             msg.data = [normalized_x, normalized_y]
             self.publisher_.publish(msg)
             self.get_logger().info(f"Published: X={normalized_x}, Y={normalized_y}")
-
-            # Detect and publish emotion only if it has changed
-            if face_roi is not None:
-                emotion = detect_emotion(face_roi)
-                if emotion != self.last_emotion:
-                    self.last_emotion = emotion  # Update last detected emotion
-                    emotion_msg = String()
-                    emotion_msg.data = emotion
-                    self.emotion_publisher.publish(emotion_msg)
-                    self.get_logger().info(f"Published Emotion: {emotion}")
-
-        # Display the video frame
+    
         cv2.imshow("Face Tracker", img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             self.get_logger().info("Shutting down vision module...")
             release_camera()
             rclpy.shutdown()
+
+    #Emotion request handle to detect emotion when requested
+    def emotion_request_handle(self, request, response): 
+        cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)
+        img, (normalized_x, normalized_y), face_area, face_roi = detect_face(cam_img, FRAME_WIDTH, FRAME_HEIGHT)
+        # Detect and publish emotion only if it has changed
+        if face_roi is not None:                        #Check if face is being detected
+            emotion = detect_emotion(face_roi)          #Call the deepFace function from utils
+            emotion_msg = String()                      #Declare string variable
+            emotion_msg.data = emotion                  #Store detected emotion to string
+            response.success = True
+            response.message = emotion_msg.data         #Send detected emotion as response to client
+        return response
+
+        # Display the video frame
 
 def main(args=None):
     rclpy.init(args=args)
