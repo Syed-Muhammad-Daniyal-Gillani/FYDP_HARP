@@ -5,7 +5,7 @@
 ### Run the following commands in terminal
 - Clone the repo using 
 ```bash
-git clone https://github.com/CEME-HARP/ros2_harp.git
+git clone git@gitlab.com:fydp_harp/fydp_harp.git
 ```
 - Run 
 ``` bash
