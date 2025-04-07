@@ -5,7 +5,7 @@
 ### Run the following commands in terminal
 - Clone the repo using 
 ```bash
-git clone https://github.com/CEME-HARP/ros2_harp.git
+git clone git@gitlab.com:fydp_harp/fydp_harp.git
 ```
 - Run 
 ``` bash
@@ -29,6 +29,11 @@ source ~/ros2_harp/install/setup.bash
 - If you want to create a virtual environment, refer to its guide below, otherwise run 
 ``` bash
  pip install -r requirements.txt #to install all dependencies
+```  
+- Then run the followin command in terminal
+``` bash
+sudo apt update
+sudo apt install python3-pyqt5 python3-pyqt5.qtwebengine
 ```  
 - Build the project using
 ``` bash

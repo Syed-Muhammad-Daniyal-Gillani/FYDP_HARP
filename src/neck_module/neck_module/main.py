@@ -1,8 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
-from neck_module.utils import RobotNeck, trackFace, pid
-
+from neck_module.utils import RobotNeck, trackFace, pid, find_esp32_port
 class NeckController(Node):
     def __init__(self):
         super().__init__('neck_controller')
@@ -14,9 +13,10 @@ class NeckController(Node):
             self.listener_callback,
             1  
         )
+        esp32_port = find_esp32_port()
         
         # Initialize neck movement
-        self.robot_neck = RobotNeck(serial_port='/dev/ttyACM0', baud_rate=9600)  # Update port if needed
+        self.robot_neck = RobotNeck(serial_port=esp32_port, baud_rate=9600)  # Update port if needed
         self.pre_error_x = 0
         self.pre_error_y = 0
 
