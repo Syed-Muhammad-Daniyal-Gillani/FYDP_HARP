@@ -35,13 +35,33 @@ class NeckController(Node):
                 self.robot_neck, (normalized_x, normalized_y), pid, self.pre_error_x, self.pre_error_y
             )
 
-    def lookaround_request_handle(self, msg, request, response): 
+    def lookaround_request_handle(self, msg, request, response):
+        self.get_logger().info("Looking around")
         # Detect and publish emotion only if it has changed
-        while len(msg.data) < 2:
-            lookAround() #Call the look around function
+        look_pattern = [
+        (65, 55),
+        (75, 68),
+        (90, 60),
+        (75, 55),
+        (65, 45),
+        (55, 55),
+        (40, 55),
+        (55,55) #Return to original position
+        ]
+        for yaw, pitch in look_pattern:
+            if not self.lookaround_active or not rclpy.ok():
+                break  # Exit if flag is reset or node is shutting down
 
-        return response
+            self.robot_neck.move_servo(yaw, pitch)
+            rclpy.spin_once(self, timeout_sec=0.3)  # Wait and allow callback to trigger
 
+            # If face was detected during spin_once, break out
+            if not self.lookaround_active:
+                self.get_logger().info("Face detected during lookAround — breaking out.")
+                break
+
+        self.get_logger().info("LookAround finished or interrupted.")
+    
     def destroy(self):
         """Clean up resources."""
         self.robot_neck.close()
