@@ -31,20 +31,21 @@ class NeckController(Node):
         if self.lookaround_active:
             self.get_logger().info("Lookaround is true, returning timer function")
             return
+
         if self.face_detected:
             self.get_logger().info("Face detected. Resetting count")
             self.count = 0
             self.face_detected = False 
             return
         else:
-            self.count+= 1
+            self.count += 1
             self.get_logger().warn(f"Initiating look around in {4 - self.count} seconds")
             if self.count == 4:
                 self.get_logger().warn(f"Count reached {self.count}, Initiating look around")
                 self.count = 0
                 self.get_logger().warn(f"Count reset. Value is: {self.count}")
                 self.lookaround_active = True
-                return
+                self.lookaround()
 
     def listener_callback(self, msg):
         """Callback function to process received coordinates."""
@@ -79,9 +80,11 @@ class NeckController(Node):
             ]
             for yaw, pitch in look_pattern:
                 if not self.lookaround_active or not rclpy.ok():
+                    self.get_logger().warn("Look around inactive. Breaking")
                     break  # Exit if flag is reset or node is shutting down
 
                 self.robot_neck.move_servo(yaw, pitch)
+                self.get_logger().warn(f"Servo moved to yaw: {yaw} and pitch {pitch}")
                 # If face was detected during spin_once, break out
                 if not self.lookaround_active:
                     self.get_logger().warn("Face detected during look around — breaking out.")
