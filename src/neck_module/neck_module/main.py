@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray, String
-from neck_module.utils import RobotNeck, trackFace, pid, find_esp32_port
+from neck_module.utils import RobotNeck, trackFace, pid_yaw, pid_pitch, find_esp32_port
 import threading
 import time
 
@@ -52,7 +52,7 @@ class NeckController(Node):
 
             # Track the face using the received coordinates
             self.pre_error_x, self.pre_error_y = trackFace(
-                self.robot_neck, (normalized_x, normalized_y), pid, self.pre_error_x, self.pre_error_y
+                self.robot_neck, (normalized_x, normalized_y), pid_yaw, pid_pitch, self.pre_error_x, self.pre_error_y
             )
         else:
             self.get_logger().info("Face not detected")
