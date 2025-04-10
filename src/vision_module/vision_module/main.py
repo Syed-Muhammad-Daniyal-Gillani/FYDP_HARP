@@ -10,7 +10,7 @@ FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
 # Initialize camera
-initialize_camera(0)  # Change to 1 for external camera
+initialize_camera()  # Change to 1 for external camera
 
 class HARP_Vision(Node):
     def __init__(self):
