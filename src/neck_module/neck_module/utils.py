@@ -3,8 +3,8 @@ import serial
 import serial.tools.list_ports
 video_in = None
 # PID Controller constants [Kp, Kd, Ki]
-pid_yaw = [3, 1, 2]
-pid_pitch = [0.005, 1.2, 2]
+pid_yaw = [0.9, 0.5, 0.1]
+pid_pitch = [0.7, 0.6, 0.1]
 
 class RobotNeck:
     def __init__(self, serial_port='/dev/ttyACM0', baud_rate=9600):
@@ -40,13 +40,13 @@ def trackFace(neck, info, pid_yaw, pid_pitch, pre_error_x, pre_error_y, toleranc
     if abs(normalized_x) < tolerance_x:
         correction_x = 0  # No correction needed if within tolerance
     else:
-        correction_x = pid_yaw[0] * normalized_x + pid_yaw[1] * (normalized_x - pre_error_x) + pid_yaw[2] * normalized_x
+        correction_x = (pid_yaw[0] * normalized_x) + pid_yaw[1] * (normalized_x - pre_error_x) + pid_yaw[2] * (normalized_x + pre_error_x)
 
     # Correction for pitch (y-axis)
     if abs(normalized_y) < tolerance_y:
         correction_y = 0  # No correction needed if within tolerance
     else:
-        correction_y = pid_pitch[0] * normalized_y + pid_pitch[1] * (normalized_y - pre_error_y) + pid_pitch[2] * normalized_y
+        correction_y = pid_pitch[0] * normalized_y + pid_pitch[1] * (normalized_y - pre_error_y) + pid_pitch[2] * (normalized_y + pre_error_x)
 
     if normalized_x != 0 or normalized_y != 0:
         # Calculate new angles for both servos
