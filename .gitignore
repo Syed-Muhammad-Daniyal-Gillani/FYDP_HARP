@@ -3,7 +3,7 @@ build/
 install/
 log/
 venv/
-
+asset/
 # Ignore Python cache files
 __pycache__/
 *.pyc
@@ -27,6 +27,6 @@ venv/
 *.mp4
 *.avi
 *.mkv
-
+*.wav
 # Ignore package-specific secrets (if any)
 secrets.yaml
