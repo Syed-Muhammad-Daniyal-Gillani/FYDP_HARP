@@ -30,12 +30,16 @@ class RobotNeck:
         """Closes the serial connection."""
         self.serial_conn.close()
 
-def trackFace(neck, info, pid_yaw, pid_pitch, pre_error_x, pre_error_y, tolerance_x=0.1, tolerance_y=0.1):
+def trackFace(neck, info, pid_yaw, pid_pitch, pre_error_x, pre_error_y, tolerance_x=0.1, tolerance_y=0.1, pitch_offset=0.2):
     """
     Tracks the face and moves the servos based on PID correction for yaw and pitch.
+    Adjusts the target to be higher than the center.
     """
     normalized_x, normalized_y = info
     
+    # Apply the pitch offset to raise the target position
+    normalized_y += pitch_offset
+
     # Correction for yaw (x-axis)
     if abs(normalized_x) < tolerance_x:
         correction_x = 0  # No correction needed if within tolerance
