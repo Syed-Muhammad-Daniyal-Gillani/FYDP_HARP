@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, String
 from neck_module.utils import RobotNeck, trackFace, pid, find_esp32_port
 import threading
 import time
@@ -16,7 +16,8 @@ class NeckController(Node):
             self.listener_callback,
             1
         )
-
+        self.emotion_publisher = self.create_publisher(String, 'user_emotions', 1)
+        self.last_emotion = None  # Track last emotion sent
         self.face_detected = True
         self.last_face_time = time.time()
         self.lookaround_thread = threading.Thread(target=self.lookaround_loop, daemon=True)
@@ -36,6 +37,10 @@ class NeckController(Node):
     def listener_callback(self, msg):
         """Callback function to process received coordinates."""
         if len(msg.data) >= 2:
+            if self.last_emotion != 'happy':
+                self.emotion_publisher.publish(String(data='happy'))
+                self.last_emotion = 'happy'
+
             with self.lock:
                 self.face_detected = True
                 self.last_face_time = time.time()
@@ -51,6 +56,7 @@ class NeckController(Node):
             )
         else:
             self.get_logger().info("Face not detected")
+            self.emotion_publisher.publish(String(data='sad'))
             with self.lock:
                 self.face_detected = False
 
@@ -63,6 +69,10 @@ class NeckController(Node):
                 should_lookaround = time_since_last_face > 4 and not self.lookaround_active
 
             if should_lookaround:
+                if self.last_emotion != 'sad':
+                    self.emotion_publisher.publish(String(data='sad'))
+                    self.last_emotion = 'sad'
+
                 self.get_logger().warn("No face detected for 4+ seconds, starting look around")
                 self.lookaround_active = True
                 self.stop_lookaround.clear()
