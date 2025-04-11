@@ -3,7 +3,7 @@ import serial
 import serial.tools.list_ports
 video_in = None
 # PID Controller constants [Kp, Kd, Ki]
-pid_yaw = [0.9, 0.5, 0.1]
+pid_yaw = [1.5, 0.5, 0.1]
 pid_pitch = [0.7, 0.6, 0.1]
 
 class RobotNeck:
