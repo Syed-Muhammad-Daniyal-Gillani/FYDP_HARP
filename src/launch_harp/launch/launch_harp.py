@@ -26,6 +26,12 @@ def generate_launch_description():
             output = 'screen'
         ),
         Node(
+            package='speech_module',
+            executable='speech_node',
+            name='Speech',
+            output = 'screen'
+        ),
+        Node(
             package='rosbridge_server',
             executable='rosbridge_websocket',
             name='ROSBridge_Local_Server',
