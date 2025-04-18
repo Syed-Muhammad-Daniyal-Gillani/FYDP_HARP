@@ -26,7 +26,18 @@ class speech_node(Node):
         self.model_path, self.config_path = self.get_piper_model_and_config()
         self.piper_voice = PiperVoice.load(self.model_path, self.config_path)
         self.get_logger().info("🧠 HARP ROS 2 Node Initialized.")
-    
+
+        # ✅ Timer to auto-run once
+        self.has_run = False
+        self.timer = self.create_timer(1.5, self.run_once)
+
+    def run_once(self):
+        if not self.has_run:
+            self.get_logger().info("🚀 Starting auto interaction...")
+            self.listen_and_respond()
+            self.has_run = True
+            self.timer.cancel()
+
     def listen_and_respond(self):
         prompt = self.listen()
         if prompt:
@@ -35,7 +46,7 @@ class speech_node(Node):
             msg = String()
             msg.data = response
             self.publisher_.publish(msg)
-            
+
     def get_piper_model_and_config(self):
         model_dir = os.path.expanduser("~/piper_data")
         model_path = config_path = None
@@ -55,14 +66,7 @@ class speech_node(Node):
 
     def trigger_callback(self, msg):
         self.get_logger().info("🎤 Listening triggered...")
-        prompt = self.listen()
-        if prompt:
-            response = self.chat_with_llm(prompt)
-            self.speak(response)
-
-            ros_msg = String()
-            ros_msg.data = response
-            self.publisher_.publish(ros_msg)
+        self.listen_and_respond()
 
     def listen(self):
         try:
