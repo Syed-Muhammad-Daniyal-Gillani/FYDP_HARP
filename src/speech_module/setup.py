@@ -13,13 +13,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='mak',
-    maintainer_email='abdullah_boobak@hotmail.com',
+    maintainer='darkdev',
+    maintainer_email='Darkness_Linux',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'speech_node = speech_module.main:main',
         ],
     },
 )
