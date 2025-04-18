@@ -14,9 +14,9 @@ from piper.voice import PiperVoice
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
 MIC = sr.Microphone(device_index=None)
-OPEN_API = "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"
+OPEN_API = "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"  # Replace with your valid token
 
-class speech_node(Node):
+class SpeechNode(Node):
     def __init__(self):
         super().__init__('harp_node')
 
@@ -25,32 +25,14 @@ class speech_node(Node):
 
         self.model_path, self.config_path = self.get_piper_model_and_config()
         self.piper_voice = PiperVoice.load(self.model_path, self.config_path)
+        
         self.get_logger().info("🧠 HARP ROS 2 Node Initialized.")
-
-        # ✅ Timer to auto-run once
-        self.has_run = False
-        self.timer = self.create_timer(1.5, self.run_once)
-
-    def run_once(self):
-        if not self.has_run:
-            self.get_logger().info("🚀 Starting auto interaction...")
-            self.listen_and_respond()
-            self.has_run = True
-            self.timer.cancel()
-
-    def listen_and_respond(self):
-        prompt = self.listen()
-        if prompt:
-            response = self.chat_with_llm(prompt)
-            self.speak(response)
-            msg = String()
-            msg.data = response
-            self.publisher_.publish(msg)
+        self.timer = self.create_timer(15.0, self.listen_and_respond)
+        self.get_logger().info("🚀 Starting auto interaction...")
 
     def get_piper_model_and_config(self):
         model_dir = os.path.expanduser("~/piper_data")
         model_path = config_path = None
-
         for root, _, files in os.walk(model_dir):
             for file in files:
                 if file.endswith(".onnx"):
@@ -65,8 +47,17 @@ class speech_node(Node):
         return model_path, config_path
 
     def trigger_callback(self, msg):
-        self.get_logger().info("🎤 Listening triggered...")
+        self.get_logger().info("🎤 Manual trigger received...")
         self.listen_and_respond()
+
+    def listen_and_respond(self):
+        prompt = self.listen()
+        if prompt:
+            response = self.chat_with_llm(prompt)
+            self.speak(response)
+            msg = String()
+            msg.data = response
+            self.publisher_.publish(msg)
 
     def listen(self):
         try:
@@ -80,7 +71,7 @@ class speech_node(Node):
 
             subprocess.run([
                 "whisper", AUDIO_FILE, "--model", "small", "--language", "en", "--output_format", "txt"
-            ])
+            ], check=True)
 
             with open("input.txt", "r") as f:
                 text = f.read().strip()
@@ -123,7 +114,10 @@ class speech_node(Node):
             stream.start()
             for audio_bytes in self.piper_voice.synthesize_stream_raw(text):
                 int_data = np.frombuffer(audio_bytes, dtype=np.int16)
-                stream.write(int_data)
+                try:
+                    stream.write(int_data)
+                except sd.PortAudioError as e:
+                    self.get_logger().warn(f"⚠️ Audio underrun: {e}")
             stream.stop()
             stream.close()
             self.get_logger().info("🗣️ Spoken response finished.")
@@ -132,7 +126,7 @@ class speech_node(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = speech_node()
+    node = SpeechNode()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
