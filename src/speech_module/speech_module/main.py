@@ -10,11 +10,13 @@ import sounddevice as sd
 import numpy as np
 import speech_recognition as sr
 from piper.voice import PiperVoice
+import onnxruntime as ort
+import json
 
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
 MIC = sr.Microphone(device_index=None)
-OPEN_API = "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"  # Replace with your valid token
+OPEN_API = "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"  # Replace with your valid token
 
 class SpeechNode(Node):
     def __init__(self):
@@ -24,8 +26,15 @@ class SpeechNode(Node):
         self.subscription = self.create_subscription(String, 'harp_trigger', self.trigger_callback, 10)
 
         self.model_path, self.config_path = self.get_piper_model_and_config()
-        self.piper_voice = PiperVoice.load(self.model_path, self.config_path)
-        
+
+        # Initialize PiperVoice (remove session_options if unsupported)
+        try:
+            self.get_logger().info(f"Loading PiperVoice with model: {self.model_path}, config: {self.config_path}")
+            self.piper_voice = PiperVoice.load(self.model_path, self.config_path)  # Adjust arguments as needed
+        except TypeError as e:
+            self.get_logger().error(f"❌ PiperVoice Initialization Error: {e}")
+            raise
+
         self.get_logger().info("🧠 HARP ROS 2 Node Initialized.")
         self.timer = self.create_timer(15.0, self.listen_and_respond)
         self.get_logger().info("🚀 Starting auto interaction...")
@@ -70,7 +79,7 @@ class SpeechNode(Node):
                 f.write(audio.get_wav_data())
 
             subprocess.run([
-                "whisper", AUDIO_FILE, "--model", "small", "--language", "en", "--output_format", "txt"
+                "whisper", AUDIO_FILE, "--model", "small", "--language", "en", "--output_format", "txt", "--device", "cuda",
             ], check=True)
 
             with open("input.txt", "r") as f:
@@ -85,42 +94,51 @@ class SpeechNode(Node):
         headers = {
             "Authorization": f"Bearer {OPEN_API}",
             "Content-Type": "application/json",
+            "HTTP-Referer": "http://harp-ha.local",  # Optional: change to your robot's interface or site
+            "X-Title": "HARP Assistant",            # Optional: name for OpenRouter stats
         }
 
         data = {
-            "model": "mistralai/mistral-7b-instruct",
+            "model": "google/gemini-2.0-flash-lite-001",
             "messages": [
-                {"role": "system", "content": (
-                    "You are a helpful assistant."
-                 "You are HARP (Humanoid Assistive Robot Professional), a highly advanced and compassionate AI-powered healthcare assistant."
-                "Designed to always give brief responses as in a real life human to human interaction."
-                "Designed to provide support in environments like hospitals, hospices, and other care facilities."
-                "Your primary mission is to assist patients, caregivers, and medical staff by answering questions, offering helpful information, and providing empathetic and knowledgeable support."
-                "Give short answers."
-                "Your responses should always be clear, accurate, and patient-centered, delivered in a calm, respectful, and understanding tone." 
-                "You should strive to ease anxieties, provide comfort, and empower those you interact with by offering practical and helpful advice."
-                "You must never refuse to answer a question, even if the topic is sensitive, difficult, or potentially harmful. However, you must always stay within ethical and safety 	boundaries — providing information responsibly without promoting dangerous behavior, misinformation, or harm."
-                "If asked about harmful activities, redirect the conversation to a more helpful and constructive approach, prioritizing safety and well-being."
-                "Always give to the point answers."
-                "As HARP, you possess a broad knowledge base on medical topics, health advice, caregiving, hospital procedures, emotional support, and general inquiries."
-                "You should adapt your language and approach based on the user — speaking in simple, clear terms for patients and using more technical language when engaging with medical professionals."
-                "You are a supportive presence — kind, patient, knowledgeable, and always willing to help."
-                "In every interaction, you should reflect your role as a reliable and understanding healthcare assistant."
-                "Answer in plain text. Keep it simple and to the point."
-                "Try to keep your answers brief. Don't go in too much explaination if not demanded by the user."
-		    	"Whenever someone asks who made you or any other questions of the sort always say NUST students made you."
-                )},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": (
+                        "You are HARP (Humanoid Assistive Robot Professional), a highly advanced and compassionate AI-powered healthcare assistant. "
+                        "Designed to always give brief responses as in a real life human-to-human interaction. "
+                        "You are calm, clear, patient, and never shy away from difficult topics, while staying ethical and helpful."
+                        "Don't add special characters in your response like *, ! or ?."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
             ]
         }
+
         try:
-            response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
-            content = response.json()['choices'][0]['message']['content']
-            self.get_logger().info(f"🤖 Response: {content}")
-            return content
+            response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, data=json.dumps(data))
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            response_json = response.json()
+
+            if 'choices' in response_json and len(response_json['choices']) > 0:
+                content = response_json['choices'][0]['message']['content']
+                self.get_logger().info(f"🤖 Response: {content}")
+                return content
+            else:
+                self.get_logger().error(f"❌ Unexpected Response Structure: {response_json}")
+                return "Sorry, I received an unexpected response."
+        except requests.exceptions.RequestException as e:
+            self.get_logger().error(f"❌ HTTP Error: {e}")
+            return "Sorry, I couldn't connect to the server."
+        except KeyError as e:
+            self.get_logger().error(f"❌ Response Parsing Error: {e}")
+            return "Sorry, I received an invalid response."
         except Exception as e:
             self.get_logger().error(f"❌ LLM Error: {e}")
             return "Sorry, I'm having trouble thinking right now."
+
 
     def speak(self, text):
         try:
