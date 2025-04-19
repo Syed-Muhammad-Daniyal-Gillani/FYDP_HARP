@@ -16,7 +16,8 @@ import json
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
 MIC = sr.Microphone(device_index=None)
-OPEN_API = "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"  # Replace with your valid token
+OPEN_API = "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"  # Replace with your valid token
+LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"
 
 class SpeechNode(Node):
     def __init__(self):
@@ -68,6 +69,7 @@ class SpeechNode(Node):
             msg.data = response
             self.publisher_.publish(msg)
 
+    
     def listen(self):
         try:
             with MIC as source:
@@ -78,14 +80,27 @@ class SpeechNode(Node):
             with open(AUDIO_FILE, "wb") as f:
                 f.write(audio.get_wav_data())
 
-            subprocess.run([
-                "whisper", AUDIO_FILE, "--model", "small", "--language", "en", "--output_format", "txt", "--device", "cuda",
-            ], check=True)
+            self.get_logger().info("☁️ Uploading audio to Lemonfox Whisper API...")
+            with open(AUDIO_FILE, "rb") as f:
+                response = requests.post(
+                "https://api.lemonfox.ai/v1/audio/transcriptions",
+            headers={
+                "Authorization": f"Bearer {LEMONFOX_API_KEY}"
+            },
+            files={
+                "file": (AUDIO_FILE, f, "audio/wav")
+            }
+    )
 
-            with open("input.txt", "r") as f:
-                text = f.read().strip()
-            self.get_logger().info(f"📝 Transcribed: {text}")
-            return text
+
+            response.raise_for_status()
+            transcription = response.json().get("text", "")
+            self.get_logger().info(f"📝 Transcribed: {transcription}")
+            return transcription
+
+        except requests.exceptions.RequestException as e:
+            self.get_logger().error(f"❌ Whisper API Error: {e}")
+            return ""
         except Exception as e:
             self.get_logger().error(f"❌ Listening Error: {e}")
             return ""
