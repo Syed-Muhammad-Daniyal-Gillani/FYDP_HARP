@@ -61,37 +61,108 @@ class SpeechNode(Node):
         self.listen_and_respond()
 
     def listen_and_respond(self):
-        prompt = self.listen()
-        if prompt:
+        """Handle a complete conversation after detecting the hotword."""
+        while True:
+            # Listen for user input
+            prompt = self.listen()
+            if not prompt:
+                self.get_logger().info("🔇 No input detected. Ending conversation.")
+                break  # End the conversation if no input is detected
+
+            # Get a response from the LLM
             response = self.chat_with_llm(prompt)
+            if not response:
+                self.get_logger().info("🤖 No response generated. Ending conversation.")
+                break  # End the conversation if no response is generated
+
+            # Speak the response
             self.speak(response)
+
+            # Publish the response
             msg = String()
             msg.data = response
             self.publisher_.publish(msg)
 
-    
-    def listen(self):
+            # Check if the conversation should continue
+            end_phrases = ["goodbye!", "goodbye","bye!", "bye", "allah hafiz", "allah hafiz!", "khuda hafiz", "khuda hafiz!"]
+            if any(phrase in response.lower() for phrase in end_phrases):
+                self.get_logger().info("👋 Ending conversation as per user request.")
+                break  # End the conversation if the response indicates a goodbye
+
+    def wait_for_hotword(self):
+        """Wait for a hotword and respond with a prompt."""
         try:
+            self.get_logger().info("🎤 Waiting for the hotword...")
+
+            # Continuously listen for the hotword
             with MIC as source:
-                self.get_logger().info("🎤 Speak now...")
+                hotword_detected = False  # Flag to track if the hotword is detected
+                while not hotword_detected:
+                    RECOGNIZER.adjust_for_ambient_noise(source, duration=0.5)
+                    self.get_logger().info("🎤 Listening for the hotword...")
+                    audio = RECOGNIZER.listen(source)
+
+                    try:
+                        # Convert audio to text using the Lemonfox Whisper API
+                        with open(AUDIO_FILE, "wb") as f:
+                            f.write(audio.get_wav_data())
+
+                        self.get_logger().info("☁️ Uploading audio to Lemonfox Whisper API for hotword detection...")
+                        with open(AUDIO_FILE, "rb") as f:
+                            response = requests.post(
+                                "https://api.lemonfox.ai/v1/audio/transcriptions",
+                                headers={
+                                    "Authorization": f"Bearer {LEMONFOX_API_KEY}"
+                                },
+                                files={
+                                    "file": (AUDIO_FILE, f, "audio/wav")
+                                }
+                            )
+
+                        response.raise_for_status()
+                        detected_text = response.json().get("text", "").lower()
+                        self.get_logger().info(f"📝 Detected: {detected_text}")
+
+                        # Check if the hotword is in the detected text
+                        hotwords = ["hi ", "hi!", "hey!","hello!", "hello", " hey","harp", "harp!"]  # Add your hotwords here
+                        if any(hotword in detected_text for hotword in hotwords):
+                            self.get_logger().info("🎤 Hotword detected!")
+                            self.speak("How can I help you?")
+                            hotword_detected = True  # Set the flag to exit the loop
+                    except requests.exceptions.RequestException as e:
+                        self.get_logger().error(f"❌ Whisper API Error during hotword detection: {e}")
+                    except Exception as e:
+                        self.get_logger().info("🔇 Could not detect hotword, retrying...")
+
+        except Exception as e:
+            self.get_logger().error(f"❌ Error in hotword detection: {e}")
+
+    def listen(self):
+        """Listen for user input after hotword detection."""
+        try:
+            self.wait_for_hotword()  # Wait for the hotword first
+
+            # Start recording after hotword detection
+            with MIC as source:
                 RECOGNIZER.adjust_for_ambient_noise(source, duration=0.5)
+                self.get_logger().info("🎤 Speak now...")
                 audio = RECOGNIZER.listen(source)
 
+            # Save the recorded audio to a file
             with open(AUDIO_FILE, "wb") as f:
                 f.write(audio.get_wav_data())
 
-            self.get_logger().info("☁️ Uploading audio to Lemonfox Whisper API...")
+            self.get_logger().info("☁️ Uploading audio to Lemonfox Whisper API for transcription...")
             with open(AUDIO_FILE, "rb") as f:
                 response = requests.post(
-                "https://api.lemonfox.ai/v1/audio/transcriptions",
-            headers={
-                "Authorization": f"Bearer {LEMONFOX_API_KEY}"
-            },
-            files={
-                "file": (AUDIO_FILE, f, "audio/wav")
-            }
-    )
-
+                    "https://api.lemonfox.ai/v1/audio/transcriptions",
+                    headers={
+                        "Authorization": f"Bearer {LEMONFOX_API_KEY}"
+                    },
+                    files={
+                        "file": (AUDIO_FILE, f, "audio/wav")
+                    }
+                )
 
             response.raise_for_status()
             transcription = response.json().get("text", "")
@@ -123,6 +194,7 @@ class SpeechNode(Node):
                         "Designed to always give brief responses as in a real life human-to-human interaction. "
                         "You are calm, clear, patient, and never shy away from difficult topics, while staying ethical and helpful."
                         "Don't add special characters in your response like *, ! or ?."
+                        "Always reply in English."
                     )
                 },
                 {
