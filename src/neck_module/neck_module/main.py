@@ -81,14 +81,14 @@ class NeckController(Node):
     def lookaround(self):
         self.get_logger().info("Starting look around pattern...")
         look_pattern = [
-            (65, 55),
-            (75, 68),
-            (90, 60),
-            (75, 55),
-            (65, 45),
-            (55, 55),
-            (40, 55),
-            (55, 55)  # Return to original position
+            (65, 57),
+            (75, 57),
+            (90, 57),
+            (75, 57),
+            (65, 57),
+            (55, 57),
+            (40, 57),
+            (55, 57)  # Return to original position
         ]
         for yaw, pitch in look_pattern:
             if self.stop_lookaround.is_set() or not rclpy.ok():
