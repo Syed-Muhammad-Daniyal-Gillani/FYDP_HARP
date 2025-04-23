@@ -12,7 +12,7 @@ import speech_recognition as sr
 from piper.voice import PiperVoice
 import onnxruntime as ort
 import json
-
+from ament_index_python.packages import get_package_share_directory
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
 MIC = sr.Microphone(device_index=None)
@@ -41,8 +41,13 @@ class SpeechNode(Node):
         self.get_logger().info("🚀 Starting auto interaction...")
 
     def get_piper_model_and_config(self):
-        model_dir = os.path.expanduser("~/piper_data")
+        # Use ROS2 package share path
+        package_share = get_package_share_directory("speech_module")
+        model_dir = os.path.join(package_share, "resource")
+
         model_path = config_path = None
+
+        # Search for model (.onnx) and config (.json)
         for root, _, files in os.walk(model_dir):
             for file in files:
                 if file.endswith(".onnx"):
@@ -52,8 +57,12 @@ class SpeechNode(Node):
                             config_path = os.path.join(root, f)
                             break
                     break
+
         if not model_path or not config_path:
-            raise FileNotFoundError("No Piper model/config found in ~/piper_data")
+            raise FileNotFoundError(
+                f"No Piper model/config found in package resource folder: {model_dir}"
+            )
+
         return model_path, config_path
 
     def trigger_callback(self, msg):
