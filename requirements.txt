@@ -3,3 +3,5 @@ opencv-contrib-python
 mediapipe
 numpy
 deepface
+pyserial
+tf-keras
