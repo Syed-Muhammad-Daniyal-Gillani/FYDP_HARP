@@ -78,26 +78,32 @@ class NeckController(Node):
                 self.stop_lookaround.clear()
                 self.lookaround()
 
+    def yaw_pitch_to_normalized(yaw, pitch):
+        # reverse of the mapping you use inside trackFace
+        # assuming 55 is centre  (change if different)
+        norm_x = (55 - yaw) / 35          # yields roughly −1 … +1
+        norm_y = (pitch - 55) / 15        # ditto
+        return norm_x, norm_y
+
     def lookaround(self):
-        self.get_logger().info("Starting look around pattern...")
-        look_pattern = [
-            (65, 55),
-            (75, 68),
-            (90, 60),
-            (75, 55),
-            (65, 45),
-            (55, 55),
-            (40, 55),
-            (55, 55)  # Return to original position
-        ]
+        look_pattern = [...]
         for yaw, pitch in look_pattern:
             if self.stop_lookaround.is_set() or not rclpy.ok():
-                self.get_logger().warn("Face detected during look around — stopping early.")
                 break
 
-            self.robot_neck.move_servo(yaw, pitch)
-            self.get_logger().info(f"Moved to yaw: {yaw}, pitch: {pitch}")
-            time.sleep(1.0)
+            # Feed “virtual face” coordinates to PID every 50 ms
+            target_x, target_y = self.yaw_pitch_to_normalized(yaw, pitch)
+            t_end = time.time() + 1.0            # 1 s to reach each key‑frame
+            while time.time() < t_end:
+                self.pre_error_x, self.pre_error_y = trackFace(
+                    self.robot_neck,
+                    (target_x, target_y),
+                    pid_yaw, pid_pitch,
+                    self.pre_error_x, self.pre_error_y
+                )
+                if self.stop_lookaround.is_set() or not rclpy.ok():
+                    break
+                time.sleep(0.05) 
 
         self.lookaround_active = False
         self.get_logger().info("Finished look around or interrupted by face detection.")
