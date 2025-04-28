@@ -73,13 +73,13 @@ class EyeController {
                 return {
                     lowerLeftEyelid: this._lowerLeftEyelid.animate(this._createKeyframes({
                         tgtTranYVal: `calc(${this._eyeSize} * -2 / 3)`,
-                        tgtRotVal: `10deg`,
+                        tgtRotVal: `7deg`,
                         enteredOffset: enterDuration / duration,
                         exitingOffset: 1 - (exitDuration / duration),
                     }), options),
                     lowerRightEyelid: this._lowerRightEyelid.animate(this._createKeyframes({
                         tgtTranYVal: `calc(${this._eyeSize} * -2 / 3)`,
-                        tgtRotVal: `-10deg`,
+                        tgtRotVal: `-7deg`,
                         enteredOffset: enterDuration / duration,
                         exitingOffset: 1 - (exitDuration / duration),
                     }), options),
