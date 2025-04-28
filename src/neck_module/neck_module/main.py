@@ -56,7 +56,9 @@ class NeckController(Node):
             )
         else:
             self.get_logger().info("Face not detected")
-            self.emotion_publisher.publish(String(data='sad'))
+            if self.last_emotion != 'sad':
+                self.emotion_publisher.publish(String(data='sad'))
+                self.last_emotion = 'sad'
             with self.lock:
                 self.face_detected = False
 
@@ -74,35 +76,42 @@ class NeckController(Node):
                     self.last_emotion = 'sad'
 
                 self.get_logger().warn("No face detected for 4+ seconds, starting look around")
-                self.lookaround_active = True
-                self.stop_lookaround.clear()
+                with self.lock:
+                    self.lookaround_active = True
+                    self.stop_lookaround.clear()
                 self.lookaround()
 
-    def yaw_pitch_to_normalized(yaw, pitch):
-        # reverse of the mapping you use inside trackFace
-        # assuming 55 is centre  (change if different)
+    def yaw_pitch_to_normalized(self, yaw, pitch):
+        """Reverse map yaw/pitch to normalized coordinates."""
         norm_x = (55 - yaw) / 35          # yields roughly −1 … +1
-        norm_y = (pitch - 55) / 15        # ditto
+        norm_y = (pitch - 55) / 15         # yields roughly −1 … +1
         return norm_x, norm_y
 
     def lookaround(self):
+        """Perform the look-around motion."""
         look_pattern = [
-            (65, 55),
-            (75, 68),
-            (90, 60),
-            (75, 55),
-            (65, 45),
             (55, 55),
-            (40, 55),
-            (55, 55)  # Return to original position
+            (65, 58)
+            # (75, 60),
+            # (85, 58),
+            # (90, 55),
+            # (70, 55),
+            # (55, 55),
+            # (35, 52),
+            # (30, 48),          
+            # (25, 45),
+            # (35, 45),
+            # (45, 50),
+            # (55, 50)  # Return to original position            
         ]
         for yaw, pitch in look_pattern:
             if self.stop_lookaround.is_set() or not rclpy.ok():
                 break
 
-            # Feed “virtual face” coordinates to PID every 50 ms
+            # Convert yaw/pitch to normalized x/y
             target_x, target_y = self.yaw_pitch_to_normalized(yaw, pitch)
-            t_end = time.time() + 1.0            # 1 s to reach each key‑frame
+
+            t_end = time.time() + 1.0  # 1 s to reach each keyframe
             while time.time() < t_end:
                 self.pre_error_x, self.pre_error_y = trackFace(
                     self.robot_neck,
@@ -112,9 +121,10 @@ class NeckController(Node):
                 )
                 if self.stop_lookaround.is_set() or not rclpy.ok():
                     break
-                time.sleep(0.05) 
+                time.sleep(0.05)  # Update every 50ms
 
-        self.lookaround_active = False
+        with self.lock:
+            self.lookaround_active = False
         self.get_logger().info("Finished look around or interrupted by face detection.")
 
     def destroy(self):
