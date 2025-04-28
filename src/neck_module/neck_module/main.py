@@ -86,7 +86,16 @@ class NeckController(Node):
         return norm_x, norm_y
 
     def lookaround(self):
-        look_pattern = [...]
+        look_pattern = [
+            (65, 55),
+            (75, 68),
+            (90, 60),
+            (75, 55),
+            (65, 45),
+            (55, 55),
+            (40, 55),
+            (55, 55)  # Return to original position
+        ]
         for yaw, pitch in look_pattern:
             if self.stop_lookaround.is_set() or not rclpy.ok():
                 break
