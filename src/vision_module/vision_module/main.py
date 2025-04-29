@@ -4,7 +4,13 @@ from std_msgs.msg import Float32MultiArray, String
 from std_srvs.srv import Trigger
 from vision_module.utils import *
 import cv2
+from behavior_classifier import BehaviorRecognizer
+from ament_index_python.packages import get_package_share_directory
+import os
 
+resource_path = os.path.join(get_package_share_directory('vision_module'), 'resource')
+model_path = os.path.join(resource_path, '2.tflite')
+label_path = os.path.join(resource_path, 'kinetics600_label_map.txt')
 # Frame resolution
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
@@ -16,8 +22,16 @@ class HARP_Vision(Node):
     def __init__(self):
         super().__init__('harp_vision')
         self.publisher_ = self.create_publisher(Float32MultiArray, 'neck_coordinates', 1)
-        self.timer = self.create_timer(0.03, self.track_face)  # Runs every 0.03 seconds (~33Hz)
+        self.behavior_pub = self.create_publisher(String, 'user_behavior', 1)
+        self.timer = self.create_timer(0.03, self.track_face)
+        self.behavior_timer = self.create_timer(0.2, self.publish_behavior)
         self.srv = self.create_service(Trigger, 'trigger_emotion_request', self.emotion_request_handle)
+
+        self.behavior_model = BehaviorRecognizer(
+            behavior_model_path= model_path,
+            behavior_label_path= label_path,
+            camera_id=0, width=640, height=480
+        )
 
     def track_face(self):
         cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)
@@ -33,8 +47,19 @@ class HARP_Vision(Node):
         cv2.imshow("Face Tracker", img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             self.get_logger().info("Shutting down vision module...")
+            self.behavior_model.stop()
             release_camera()
             rclpy.shutdown()
+            
+    def publish_behavior(self):
+        label, score = self.behavior_model.get_behavior()
+        self.get_logger().info(f"Behavior detected: {label} with score {score}")
+        if score > 0.5:
+            msg = String()
+            msg.data = label
+            self.behavior_pub.publish(msg)
+            self.get_logger().info(f"Published behavior: {label} ({score:.2f})")
+
 
     #Emotion request handle to detect emotion when requested
     def emotion_request_handle(self, request, response): 
