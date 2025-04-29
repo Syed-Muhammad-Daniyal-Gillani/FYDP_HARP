@@ -4,9 +4,10 @@ from std_msgs.msg import Float32MultiArray, String
 from std_srvs.srv import Trigger
 from vision_module.utils import *
 import cv2
-from behavior_classifier import BehaviorRecognizer
+from behavior_classifier import run
 from ament_index_python.packages import get_package_share_directory
 import os
+import threading
 
 resource_path = os.path.join(get_package_share_directory('vision_module'), 'resource')
 model_path = os.path.join(resource_path, '2.tflite')
@@ -27,11 +28,11 @@ class HARP_Vision(Node):
         self.behavior_timer = self.create_timer(0.2, self.publish_behavior)
         self.srv = self.create_service(Trigger, 'trigger_emotion_request', self.emotion_request_handle)
 
-        self.behavior_model = BehaviorRecognizer(
-            behavior_model_path= model_path,
-            behavior_label_path= label_path,
-            camera_id=0, width=640, height=480
+        # Start the behavior classification in a separate thread
+        self.behavior_thread = threading.Thread(
+            target=run, args=(model_path, label_path, 2, 6, 0, FRAME_WIDTH, FRAME_HEIGHT)
         )
+        self.behavior_thread.start()
 
     def track_face(self):
         cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)
