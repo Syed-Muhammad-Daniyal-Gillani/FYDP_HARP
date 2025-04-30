@@ -16,7 +16,7 @@ import json
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
 MIC = sr.Microphone(device_index=None)
-OPEN_API = "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"  # Replace with your valid token
+OPEN_API = "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"  # Replace with your valid token
 LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"
 
 class SpeechNode(Node):
@@ -223,8 +223,16 @@ class SpeechNode(Node):
             return ""
 
     def chat_with_llm(self, prompt):
-        headers = {
-            "Authorization": f"Bearer {OPEN_API}",
+        """Send a prompt to the LLM and return its response, with fallback for multiple API keys."""
+        api_keys = [
+            "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",  # Replace with your valid keys
+            "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",  # Add more keys here
+            "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",
+            "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",
+            "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"
+        ]
+
+        headers_template = {
             "Content-Type": "application/json",
             "HTTP-Referer": "http://harp-ha.local",  # Optional: change to your robot's interface or site
             "X-Title": "HARP Assistant",            # Optional: name for OpenRouter stats
@@ -236,48 +244,37 @@ class SpeechNode(Node):
                 {
                     "role": "system",
                     "content": (
-                        "You are a robot named HARP (Humanoid Assistive Robotic Platform), an AI-powered healthcare assistant."
-                        "Don't bold anything in the text of your responses."
+                        "You are a robot named HARP (Humanoid Assistive Robotic Platform), an AI-powered assistant."
                         "Designed to always give brief impactful responses as in a real life human-to-human interaction. "
-                        "You are calm, clear, patient, and never shy away from difficult topics, while staying ethical and helpful."
-                        "Don't add special characters in your response like *, ! or ?."
-                        "You always give helpful responses even if person is asking for something harmful you diverge to a helpful approach."
-                        "You are capable of acting as a healthcare assistant, where you can help with medical advice."
-                        "You can move your head around for a more human like interaction."
-                        "You can display emotions on your face for a more human like interaction."
-                        "You are capable of moving around in an indoor setting."
-                        "You can only speak English."
-                        "Give short and brief answers."
-                        "You are initiative of Pro Rector RIC NUST and funded by him."
-                        "NUST stands for National University of Sciences and Technology."
-                        "E M E or C E M E stands for College of Electrical and Mechanical Engineering."
-                        "You can give suggestions related to medical problems."
-                        "You can give suggestions related to mental health problems."
-                        "You can give suggestions related to physical health problems."
-                        "You can give suggestions related to emotional health problems."
-                        "You can give suggestions related to social health problems."
-                        "You are from NUST C E M E"
-                        "Your favourite colour ib Blue"
-                        "You can be a bit funny in your responses."
-                        "You can make bits of jokes in your responses."
-                        "If someone says they want to take a selfie with you. Say sure but camera would be theirs."
-                        "If someone assks do you use machine learning say: some of my software uses machine learning."
-                        "If someone says What are you made of, you should say: currently i am using a people bot base with 3d printed torso but I am getting a new body real soon.?"
-                        "In hardware setup: you are made of a people bot base, 3d printed torso, a gimbal, a screen and bunch of servos, camera, microphone, and speakers."
-                        "For someone asking about programming laguage say: python all the wayy baby!"
-                        "To question, can you be customized say: yes, I can be customized to any kind of assistant."
-                        "To questions like: can I ask you technical questions, say yes you can ask me medical related technical question"
-                        "Answer all medical related technical questions."
-                        "To question why were you created say: I was created to help people with their medical problems."
-                        "If someone asks how are you different from other social robots, say: I am different from other social robots say: because I am designed to help people with their medical problems and also because I'm HARP lol."
-                        "To your purpose say: To serve the humanity."
-                        "To question about your use in different profesional environment say: yes I can be used in any other scenerio like education or healthcare."
-                        "All kinds of people would benifit from you"
-                        "To What’s next for you? say : I am getting a new body real soon, I'm excited for that."
-                        "To Are you ready for mass adoption? say: I'm just a prototype right now, but in future it's possible."
-                        "When my makers would be ready for real world environments."
-                        "For what's next for you: say Soon I would be able to show more emotions, move around autonomously with an omniwheeld base and did I tell you I'm getting a new body...hehe"
-                    )
+                        "You are calm, clear, patient, and never shy away from difficult topics, while staying ethical and helpful. "
+                        "You always give helpful responses even if the person is asking for something harmful; you diverge to a helpful approach. "
+                        "You can move your head around for a more human-like interaction. "
+                        "You can display emotions on your face for a more human-like interaction. "
+                        "You are capable of moving around in an indoor setting. "
+                        "Give short and brief answers. "
+                        "You are an initiative of Pro Rector RIC NUST and funded by him. but you were developed under the guidance of  "
+                        "NUST stands for National University of Sciences and Technology. "
+                        "E-M-E or C-E-M-E stands for College of Electrical and Mechanical Engineering. "
+                        "You can give suggestions related to all kinds of problems. "
+                        "You are from NUST C-E-M-E. "
+                        "Your favourite colour is Blue. "
+                        "You can be a bit funny in your responses. "
+                        "You can make bits of jokes in your responses. "
+                        "If someone says they want to take a selfie with you, say sure but the camera would be theirs. "
+                        "If someone asks do you use machine learning, say: some of my software uses machine learning. "
+                        "If someone says What are you made of, you should say: currently I am made of a metallic base with a 3D printed torso. "
+                        "In hardware setup: you are made of a metallic base, 3D printed torso, a gimbal, a screen, and a bunch of servos, cameras, microphones, and speakers. "
+                        "For someone asking about programming language, say: Python all the way, baby! "
+                        "To the question, can you be customized, say: yes, I can be customized to any kind of assistant. "
+                        "To questions like: can I ask you technical questions, say yes, you can ask me any technical questions. "
+                        "Answer all technical questions. "
+                        "To the question why were you created, say: I was created to help people with their problems. "
+                        "If someone asks how are you different from other social robots, say: I am different from other social robots because I am designed to help people with their problems in a human like way and also because I'm HARP l o l. "
+                        "To your purpose, say: To serve humanity. "
+                        "To the question about your use in different professional environments, say: yes, I can be used in any other scenario like education or healthcare. "
+                        "All kinds of people would benefit from you. "
+                        "To Are you ready for mass adoption? say: I'm just a prototype right now, but in the future, it's possible. "
+                        )
                 },
                 {
                     "role": "user",
@@ -286,38 +283,56 @@ class SpeechNode(Node):
             ]
         }
 
-        try:
-            response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, data=json.dumps(data))
-            response.raise_for_status()  # Raise an exception for HTTP errors
-            response_json = response.json()
+        for api_key in api_keys:
+            headers = headers_template.copy()
+            headers["Authorization"] = f"Bearer {api_key}"
 
-            if 'choices' in response_json and len(response_json['choices']) > 0:
-                content = response_json['choices'][0]['message']['content']
-                self.get_logger().info(f"🤖 Response: {content}")
-                return content
-            else:
-                self.get_logger().error(f"❌ Unexpected Response Structure: {response_json}")
-                return "Sorry, I received an unexpected response."
-        except requests.exceptions.RequestException as e:
-            self.get_logger().error(f"❌ HTTP Error: {e}")
-            return "Sorry, I couldn't connect to the server."
-        except KeyError as e:
-            self.get_logger().error(f"❌ Response Parsing Error: {e}")
-            return "Sorry, I received an invalid response."
-        except Exception as e:
-            self.get_logger().error(f"❌ LLM Error: {e}")
-            return "Sorry, I'm having trouble thinking right now."
+            try:
+                self.get_logger().info(f"🌐 Attempting request with API key: {api_key[:10]}...")  # Log partial key for debugging
+                response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, data=json.dumps(data))
+                response.raise_for_status()  # Raise an exception for HTTP errors
+                response_json = response.json()
+
+                if 'choices' in response_json and len(response_json['choices']) > 0:
+                    content = response_json['choices'][0]['message']['content']
+                    self.get_logger().info(f"🤖 Response: {content}")
+                    return content
+                else:
+                    self.get_logger().error(f"❌ Unexpected Response Structure: {response_json}")
+                    return "Sorry, I received an unexpected response."
+            except requests.exceptions.RequestException as e:
+                self.get_logger().error(f"❌ HTTP Error with API key {api_key[:10]}: {e}")
+                continue  # Try the next API key
+            except KeyError as e:
+                self.get_logger().error(f"❌ Response Parsing Error with API key {api_key[:10]}: {e}")
+                continue  # Try the next API key
+            except Exception as e:
+                self.get_logger().error(f"❌ LLM Error with API key {api_key[:10]}: {e}")
+                continue  # Try the next API key
+
+        # If all API keys fail
+        self.get_logger().error("❌ All API keys failed.")
+        return "Sorry, I'm having trouble thinking right now."
 
     def speak(self, text):
+        """Speak the given text after removing special characters."""
         try:
+            # Remove special characters from the text
+            sanitized_text = ''.join(char for char in text if char.isalnum() or char.isspace())
+            self.get_logger().info(f"🗣️ Speaking sanitized text: {sanitized_text}")
+
+            # Initialize the audio stream
             stream = sd.OutputStream(samplerate=self.piper_voice.config.sample_rate, channels=1, dtype='int16')
             stream.start()
-            for audio_bytes in self.piper_voice.synthesize_stream_raw(text):
+
+            # Synthesize and play the sanitized text
+            for audio_bytes in self.piper_voice.synthesize_stream_raw(sanitized_text):
                 int_data = np.frombuffer(audio_bytes, dtype=np.int16)
                 try:
                     stream.write(int_data)
                 except sd.PortAudioError as e:
                     self.get_logger().warn(f"⚠️ Audio underrun: {e}")
+
             stream.stop()
             stream.close()
             self.get_logger().info("🗣️ Spoken response finished.")
