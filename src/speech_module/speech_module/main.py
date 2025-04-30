@@ -12,6 +12,7 @@ import speech_recognition as sr
 from piper.voice import PiperVoice
 import onnxruntime as ort
 import json
+import time
 
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
@@ -69,6 +70,15 @@ class SpeechNode(Node):
             if not prompt:
                 self.get_logger().info("🔇 No input detected. Continuing conversation.")
                 continue  # Continue the conversation if no input is detected
+
+            # Check if the prompt is a task command
+            if any(keyword in prompt.lower() for keyword in [
+                "move straight", "move right", "move left", "move backwards",
+                "strafe front right diagonal", "strafe front left diagonal",
+                "strafe back left diagonal", "strafe back right diagonal", "turn backwards"
+            ]):
+                self.handle_task(prompt.lower())  # Pass the command to the task handler
+                continue  # Skip generating a response for task commands
 
             # Get a response from the LLM
             response = self.chat_with_llm(prompt)
@@ -338,6 +348,100 @@ class SpeechNode(Node):
             self.get_logger().info("🗣️ Spoken response finished.")
         except Exception as e:
             self.get_logger().error(f"❌ TTS Error: {e}")
+
+    def move_straight(self, duration):
+        """Simulate moving the robot straight."""
+        self.get_logger().info(f"🚗 Moving straight for {duration} seconds...")
+        # Add motor control logic here to move the robot straight
+        time.sleep(duration)  # Simulate the movement duration
+        self.get_logger().info("✅ Finished moving straight.")
+
+    def move_right(self, duration):
+        """Simulate moving the robot to the right."""
+        self.get_logger().info(f"➡️ Moving right for {duration} seconds...")
+        # Add motor control logic here to move the robot to the right
+        time.sleep(duration)  # Simulate the movement duration
+        self.get_logger().info("✅ Finished moving right.")
+
+    def move_left(self, duration):
+        """Simulate moving the robot to the left."""
+        self.get_logger().info(f"⬅️ Moving left for {duration} seconds...")
+        # Add motor control logic here to move the robot to the left
+        time.sleep(duration)  # Simulate the movement duration
+        self.get_logger().info("✅ Finished moving left.")
+
+    def move_backwards(self, duration):
+        """Simulate moving the robot backwards."""
+        self.get_logger().info(f"🔙 Moving backwards for {duration} seconds...")
+        # Add motor control logic here to move the robot backwards
+        time.sleep(duration)  # Simulate the movement duration
+        self.get_logger().info("✅ Finished moving backwards.")
+
+    def strafe_front_right_diagonal(self, duration):
+        """Simulate strafing front-right diagonally."""
+        self.get_logger().info(f"↗️ Strafing front-right for {duration} seconds...")
+        # Add motor control logic here to strafe front-right diagonally
+        time.sleep(duration)  # Simulate the movement duration
+        self.get_logger().info("✅ Finished strafing front-right.")
+
+    def strafe_front_left_diagonal(self, duration):
+        """Simulate strafing front-left diagonally."""
+        self.get_logger().info(f"↖️ Strafing front-left for {duration} seconds...")
+        # Add motor control logic here to strafe front-left diagonally
+        time.sleep(duration)  # Simulate the movement duration
+        self.get_logger().info("✅ Finished strafing front-left.")
+
+    def strafe_back_left_diagonal(self, duration):
+        """Simulate strafing back-left diagonally."""
+        self.get_logger().info(f"↙️ Strafing back-left for {duration} seconds...")
+        # Add motor control logic here to strafe back-left diagonally
+        time.sleep(duration)  # Simulate the movement duration
+        self.get_logger().info("✅ Finished strafing back-left.")
+
+    def strafe_back_right_diagonal(self, duration):
+        """Simulate strafing back-right diagonally."""
+        self.get_logger().info(f"↘️ Strafing back-right for {duration} seconds...")
+        # Add motor control logic here to strafe back-right diagonally
+        time.sleep(duration)  # Simulate the movement duration
+        self.get_logger().info("✅ Finished strafing back-right.")
+
+    def turn_backwards(self, duration):
+        """Simulate turning backwards."""
+        self.get_logger().info(f"🔄 Turning backwards for {duration} seconds...")
+        # Add motor control logic here to turn the robot backwards
+        time.sleep(duration)  # Simulate the movement duration
+        self.get_logger().info("✅ Finished turning backwards.")
+
+    def handle_task(self, task):
+        """Handle specific tasks based on user commands."""
+        try:
+            # Extract the duration from the command
+            duration = int(task.split("for")[1].strip().split()[0])  # Extract the number of seconds
+        except (IndexError, ValueError):
+            self.get_logger().error("❌ Invalid duration specified in the command.")
+            return
+
+        # Match the task to the corresponding movement function
+        if "move straight" in task:
+            self.move_straight(duration)
+        elif "move right" in task:
+            self.move_right(duration)
+        elif "move left" in task:
+            self.move_left(duration)
+        elif "move backwards" in task:
+            self.move_backwards(duration)
+        elif "strafe front right diagonal" in task:
+            self.strafe_front_right_diagonal(duration)
+        elif "strafe front left diagonal" in task:
+            self.strafe_front_left_diagonal(duration)
+        elif "strafe back left diagonal" in task:
+            self.strafe_back_left_diagonal(duration)
+        elif "strafe back right diagonal" in task:
+            self.strafe_back_right_diagonal(duration)
+        elif "turn backwards" in task:
+            self.turn_backwards(duration)
+        else:
+            self.get_logger().info(f"🤔 Task not recognized: {task}")
 
 def main(args=None):
     rclpy.init(args=args)
