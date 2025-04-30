@@ -13,11 +13,12 @@ from piper.voice import PiperVoice
 import onnxruntime as ort
 import json
 import time
+from word2number import w2n  # Import the word2number library
 
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
 MIC = sr.Microphone(device_index=None)
-OPEN_API = "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"  # Replace with your valid token
+OPEN_API = "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"  # Replace with your valid token
 LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"
 
 class SpeechNode(Node):
@@ -235,11 +236,11 @@ class SpeechNode(Node):
     def chat_with_llm(self, prompt):
         """Send a prompt to the LLM and return its response, with fallback for multiple API keys."""
         api_keys = [
-            "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",  # Replace with your valid keys
-            "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",  # Add more keys here
-            "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",
-            "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",
-            "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"
+            "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",  # Replace with your valid keys
+            "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",  # Add more keys here
+            "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",
+            "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",
+            "sk-or-v1-9b4daa4729c6ed8e73a706cbc6de1aca22563bbea1c842ee5b0f27a9418416f"
         ]
 
         headers_template = {
@@ -416,7 +417,13 @@ class SpeechNode(Node):
         """Handle specific tasks based on user commands."""
         try:
             # Extract the duration from the command
-            duration = int(task.split("for")[1].strip().split()[0])  # Extract the number of seconds
+            duration_text = task.split("for")[1].strip().split()[0]  # Extract the duration part
+            try:
+                # Try converting spelled-out numbers to digits
+                duration = w2n.word_to_num(duration_text)
+            except ValueError:
+                # If conversion fails, assume it's already a digit
+                duration = int(duration_text)
         except (IndexError, ValueError):
             self.get_logger().error("❌ Invalid duration specified in the command.")
             return
