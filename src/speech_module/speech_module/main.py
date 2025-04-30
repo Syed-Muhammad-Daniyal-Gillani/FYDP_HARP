@@ -18,7 +18,7 @@ from word2number import w2n  # Import the word2number library
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
 MIC = sr.Microphone(device_index=None)
-OPEN_API = "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"  # Replace with your valid token
+OPEN_API = "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"  # Replace with your valid token
 LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"
 
 class SpeechNode(Node):
@@ -236,11 +236,7 @@ class SpeechNode(Node):
     def chat_with_llm(self, prompt):
         """Send a prompt to the LLM and return its response, with fallback for multiple API keys."""
         api_keys = [
-            "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",  # Replace with your valid keys
-            "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",  # Add more keys here
-            "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",
-            "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",
-            "sk-or-v1-9b4daa4729c6ed8e73a706cbc6de1aca22563bbea1c842ee5b0f27a9418416f"
+            "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"  # Replace with your valid keys
         ]
 
         headers_template = {
