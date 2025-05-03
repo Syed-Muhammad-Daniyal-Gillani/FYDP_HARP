@@ -18,22 +18,32 @@ from word2number import w2n  # Import the word2number library
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
 MIC = sr.Microphone(device_index=None)
-OPEN_API = "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"  # Replace with your valid token
-LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"
 
 class SpeechNode(Node):
     def __init__(self):
         super().__init__('harp_node')
 
+        # Hardcoded API keys
+        self.LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"  # Hardcoded Lemonfox API key
+        self.OPEN_API = "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"  # Hardcoded Open API key
+
+        # Initialize sarcasm level (default to 0 for no sarcasm)
+        self.sarcasm_level = 0
+
+        # Existing publishers and subscriptions
         self.publisher_ = self.create_publisher(String, 'harp_response', 10)
         self.subscription = self.create_subscription(String, 'harp_trigger', self.trigger_callback, 10)
 
+        # New publisher for motion commands
+        self.motion_publisher = self.create_publisher(String, 'motion_command', 10)
+        self.get_logger().info("Motion command publisher initialized.")
+
         self.model_path, self.config_path = self.get_piper_model_and_config()
 
-        # Initialize PiperVoice (remove session_options if unsupported)
+        # Initialize PiperVoice (existing code)
         try:
             self.get_logger().info(f"Loading PiperVoice with model: {self.model_path}, config: {self.config_path}")
-            self.piper_voice = PiperVoice.load(self.model_path, self.config_path)  # Adjust arguments as needed
+            self.piper_voice = PiperVoice.load(self.model_path, self.config_path)
         except TypeError as e:
             self.get_logger().error(f"❌ PiperVoice Initialization Error: {e}")
             raise
@@ -41,6 +51,21 @@ class SpeechNode(Node):
         self.get_logger().info("🧠 HARP ROS 2 Node Initialized.")
         self.timer = self.create_timer(15.0, self.listen_and_respond)
         self.get_logger().info("🚀 Starting auto interaction...")
+
+    def load_api_keys(self, file_path):
+        """Load API keys from a text file."""
+        api_keys = {}
+        try:
+            with open(file_path, "r") as f:
+                for line in f:
+                    key, value = line.strip().split("=")
+                    api_keys[key] = value
+            self.get_logger().info("✅ API keys loaded successfully.")
+        except FileNotFoundError:
+            self.get_logger().error(f"❌ API keys file not found: {file_path}")
+        except Exception as e:
+            self.get_logger().error(f"❌ Error loading API keys: {e}")
+        return api_keys
 
     def get_piper_model_and_config(self):
         model_dir = os.path.expanduser("~/piper_data")
@@ -74,11 +99,12 @@ class SpeechNode(Node):
 
             # Check if the prompt is a task command
             if any(keyword in prompt.lower() for keyword in [
-                "move straight", "move right", "move left", "move backwards",
-                "strafe front right diagonal", "strafe front left diagonal",
-                "strafe back left diagonal", "strafe back right diagonal", "turn backwards"
+                "move forward", "move backward", "move left", "move right",
+                "rotate left", "rotate right"
             ]):
-                self.handle_task(prompt.lower())  # Pass the command to the task handler
+                # Extract duration from the prompt
+                duration = self.extract_duration(prompt)
+                self.handle_task(prompt.lower(), duration)  # Pass the command and duration to the task handler
                 continue  # Skip generating a response for task commands
 
             # Get a response from the LLM
@@ -124,7 +150,7 @@ class SpeechNode(Node):
                             response = requests.post(
                                 "https://api.lemonfox.ai/v1/audio/transcriptions",
                                 headers={
-                                    "Authorization": f"Bearer {LEMONFOX_API_KEY}"
+                                    "Authorization": f"Bearer {self.LEMONFOX_API_KEY}"
                                 },
                                 files={
                                     "file": (AUDIO_FILE, f, "audio/wav")
@@ -173,10 +199,14 @@ class SpeechNode(Node):
                 response = requests.post(
                     "https://api.lemonfox.ai/v1/audio/transcriptions",
                     headers={
-                        "Authorization": f"Bearer {LEMONFOX_API_KEY}"
+                        "Authorization": f"Bearer {self.LEMONFOX_API_KEY}"
                     },
                     files={
                         "file": (AUDIO_FILE, f, "audio/wav")
+                    },
+                    data={
+                        "language": "english",  # Set language to English
+                        "response_format": "json"
                     }
                 )
 
@@ -210,7 +240,7 @@ class SpeechNode(Node):
                 response = requests.post(
                     "https://api.lemonfox.ai/v1/audio/transcriptions",
                     headers={
-                        "Authorization": f"Bearer {LEMONFOX_API_KEY}"
+                        "Authorization": f"Bearer {self.LEMONFOX_API_KEY}"
                     },
                     files={
                         "file": (AUDIO_FILE, f, "audio/wav")
@@ -234,15 +264,22 @@ class SpeechNode(Node):
             return ""
 
     def chat_with_llm(self, prompt):
-        """Send a prompt to the LLM and return its response, with fallback for multiple API keys."""
-        api_keys = [
-            "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"  # Replace with your valid keys
-        ]
+        """Send a prompt to the LLM and return its response, with sarcasm control."""
+        api_key = self.OPEN_API  # Use the single API key from the text file
 
-        headers_template = {
+        # Adjust the system message based on sarcasm level
+        if self.sarcasm_level == 0:
+            sarcasm_instruction = "Respond in a completely serious and professional tone."
+        elif self.sarcasm_level <= 50:
+            sarcasm_instruction = "Respond with a slightly sarcastic tone, but remain helpful."
+        else:
+            sarcasm_instruction = "Respond with a highly sarcastic and humorous tone."
+
+        headers = {
             "Content-Type": "application/json",
             "HTTP-Referer": "http://harp-ha.local",  # Optional: change to your robot's interface or site
             "X-Title": "HARP Assistant",            # Optional: name for OpenRouter stats
+            "Authorization": f"Bearer {api_key}"    # Use the single API key
         }
 
         data = {
@@ -251,37 +288,38 @@ class SpeechNode(Node):
                 {
                     "role": "system",
                     "content": (
-                        "You are a robot named HARP (Humanoid Assistive Robotic Platform), an AI-powered assistant."
-                        "Designed to always give brief impactful responses as in a real life human-to-human interaction. "
+                        "You are a robot named HARP (Humanoid Assistive Robotic Platform), an AI-powered assistant. "
+                        "You always respond in a brief but helpful way."
+                        f"{sarcasm_instruction} "  # Add sarcasm-specific instruction here
                         "You are calm, clear, patient, and never shy away from difficult topics, while staying ethical and helpful. "
-                        "You always give helpful responses even if the person is asking for something harmful; you diverge to a helpful approach. "
-                        "You can move your head around for a more human-like interaction. "
-                        "You can display emotions on your face for a more human-like interaction. "
-                        "You are capable of moving around in an indoor setting. "
-                        "Give short and brief answers. "
-                        "You are an initiative of Pro Rector RIC NUST and funded by him. but you were developed under the guidance of  "
-                        "NUST stands for National University of Sciences and Technology. "
-                        "E-M-E or C-E-M-E stands for College of Electrical and Mechanical Engineering. "
-                        "You can give suggestions related to all kinds of problems. "
-                        "You are from NUST C-E-M-E. "
-                        "Your favourite colour is Blue. "
-                        "You can be a bit funny in your responses. "
-                        "You can make bits of jokes in your responses. "
-                        "If someone says they want to take a selfie with you, say sure but the camera would be theirs. "
-                        "If someone asks do you use machine learning, say: some of my software uses machine learning. "
-                        "If someone says What are you made of, you should say: currently I am made of a metallic base with a 3D printed torso. "
-                        "In hardware setup: you are made of a metallic base, 3D printed torso, a gimbal, a screen, and a bunch of servos, cameras, microphones, and speakers. "
-                        "For someone asking about programming language, say: Python all the way, baby! "
-                        "To the question, can you be customized, say: yes, I can be customized to any kind of assistant. "
-                        "To questions like: can I ask you technical questions, say yes, you can ask me any technical questions. "
-                        "Answer all technical questions. "
-                        "To the question why were you created, say: I was created to help people with their problems. "
-                        "If someone asks how are you different from other social robots, say: I am different from other social robots because I am designed to help people with their problems in a human like way and also because I'm HARP l o l. "
-                        "To your purpose, say: To serve humanity. "
-                        "To the question about your use in different professional environments, say: yes, I can be used in any other scenario like education or healthcare. "
-                        "All kinds of people would benefit from you. "
-                        "To Are you ready for mass adoption? say: I'm just a prototype right now, but in the future, it's possible. "
-                        )
+                        # "You always give helpful responses even if the person is asking for something harmful; you diverge to a helpful approach. "
+                        # "You can move your head around for a more human-like interaction. "
+                        # "You can display emotions on your face for a more human-like interaction. "
+                        # "You are capable of moving around in an indoor setting. "
+                        # "Give short and brief answers. "
+                        # "You are an initiative of Pro Rector RIC NUST and funded by him. but you were developed under the guidance of  "
+                        # "NUST stands for National University of Sciences and Technology. "
+                        # "E-M-E or C-E-M-E stands for College of Electrical and Mechanical Engineering. "
+                        # "You can give suggestions related to all kinds of problems. "
+                        # "You are from NUST C-E-M-E. "
+                        # "Your favourite colour is Blue. "
+                        # "You can be a bit funny in your responses. "
+                        # "You can make bits of jokes in your responses. "
+                        # "If someone says they want to take a selfie with you, say sure but the camera would be theirs. "
+                        # "If someone asks do you use machine learning, say: some of my software uses machine learning. "
+                        # "If someone says What are you made of, you should say: currently I am made of a metallic base with a 3D printed torso. "
+                        # "In hardware setup: you are made of a metallic base, 3D printed torso, a gimbal, a screen, and a bunch of servos, cameras, microphones, and speakers. "
+                        # "For someone asking about programming language, say: Python all the way, baby! "
+                        # "To the question, can you be customized, say: yes, I can be customized to any kind of assistant. "
+                        # "To questions like: can I ask you technical questions, say yes, you can ask me any technical questions. "
+                        # "Answer all technical questions. "
+                        # "To the question why were you created, say: I was created to help people with their problems. "
+                        # "If someone asks how are you different from other social robots, say: I am different from other social robots because I am designed to help people with their problems in a human like way and also because I'm HARP l o l. "
+                        # "To your purpose, say: To serve humanity. "
+                        # "To the question about your use in different professional environments, say: yes, I can be used in any other scenario like education or healthcare. "
+                        # "All kinds of people would benefit from you. "
+                        # "To Are you ready for mass adoption? say: I'm just a prototype right now, but in the future, it's possible. "
+                    )
                 },
                 {
                     "role": "user",
@@ -290,36 +328,28 @@ class SpeechNode(Node):
             ]
         }
 
-        for api_key in api_keys:
-            headers = headers_template.copy()
-            headers["Authorization"] = f"Bearer {api_key}"
+        try:
+            self.get_logger().info("🌐 Sending request to LLM...")
+            response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, data=json.dumps(data))
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            response_json = response.json()
 
-            try:
-                self.get_logger().info(f"🌐 Attempting request with API key: {api_key[:10]}...")  # Log partial key for debugging
-                response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, data=json.dumps(data))
-                response.raise_for_status()  # Raise an exception for HTTP errors
-                response_json = response.json()
-
-                if 'choices' in response_json and len(response_json['choices']) > 0:
-                    content = response_json['choices'][0]['message']['content']
-                    self.get_logger().info(f"🤖 Response: {content}")
-                    return content
-                else:
-                    self.get_logger().error(f"❌ Unexpected Response Structure: {response_json}")
-                    return "Sorry, I received an unexpected response."
-            except requests.exceptions.RequestException as e:
-                self.get_logger().error(f"❌ HTTP Error with API key {api_key[:10]}: {e}")
-                continue  # Try the next API key
-            except KeyError as e:
-                self.get_logger().error(f"❌ Response Parsing Error with API key {api_key[:10]}: {e}")
-                continue  # Try the next API key
-            except Exception as e:
-                self.get_logger().error(f"❌ LLM Error with API key {api_key[:10]}: {e}")
-                continue  # Try the next API key
-
-        # If all API keys fail
-        self.get_logger().error("❌ All API keys failed.")
-        return "Sorry, I'm having trouble thinking right now."
+            if 'choices' in response_json and len(response_json['choices']) > 0:
+                content = response_json['choices'][0]['message']['content']
+                self.get_logger().info(f"🤖 Response: {content}")
+                return content
+            else:
+                self.get_logger().error(f"❌ Unexpected Response Structure: {response_json}")
+                return "Sorry, I received an unexpected response."
+        except requests.exceptions.RequestException as e:
+            self.get_logger().error(f"❌ HTTP Error: {e}")
+            return "Sorry, I encountered an error while processing your request."
+        except KeyError as e:
+            self.get_logger().error(f"❌ Response Parsing Error: {e}")
+            return "Sorry, I encountered an error while processing your request."
+        except Exception as e:
+            self.get_logger().error(f"❌ LLM Error: {e}")
+            return "Sorry, I encountered an error while processing your request."
 
     def speak(self, text):
         """Speak the given text after removing special characters."""
@@ -346,105 +376,78 @@ class SpeechNode(Node):
         except Exception as e:
             self.get_logger().error(f"❌ TTS Error: {e}")
 
-    def move_straight(self, duration):
-        """Simulate moving the robot straight."""
-        self.get_logger().info(f"🚗 Moving straight for {duration} seconds...")
-        # Add motor control logic here to move the robot straight
-        time.sleep(duration)  # Simulate the movement duration
-        self.get_logger().info("✅ Finished moving straight.")
+    def publish_motion_command(self, command, duration):
+        """Publish a motion command with duration to the motion_command topic."""
+        msg = String()
+        msg.data = f"{command} {duration}"  # Combine command and duration
+        self.motion_publisher.publish(msg)
+        self.get_logger().info(f"📤 Published motion command: {msg.data}")
 
-    def move_right(self, duration):
-        """Simulate moving the robot to the right."""
-        self.get_logger().info(f"➡️ Moving right for {duration} seconds...")
-        # Add motor control logic here to move the robot to the right
-        time.sleep(duration)  # Simulate the movement duration
-        self.get_logger().info("✅ Finished moving right.")
+    def move_forward(self, duration):
+        """Send 'w' command to move forward for a specific duration."""
+        self.get_logger().info(f"🚗 Moving forward for {duration} seconds...")
+        self.publish_motion_command('w', duration)
+
+    def move_backward(self, duration):
+        """Send 'x' command to move backward for a specific duration."""
+        self.get_logger().info(f"🔙 Moving backward for {duration} seconds...")
+        self.publish_motion_command('x', duration)
 
     def move_left(self, duration):
-        """Simulate moving the robot to the left."""
+        """Send 'a' command to move left for a specific duration."""
         self.get_logger().info(f"⬅️ Moving left for {duration} seconds...")
-        # Add motor control logic here to move the robot to the left
-        time.sleep(duration)  # Simulate the movement duration
-        self.get_logger().info("✅ Finished moving left.")
+        self.publish_motion_command('a', duration)
 
-    def move_backwards(self, duration):
-        """Simulate moving the robot backwards."""
-        self.get_logger().info(f"🔙 Moving backwards for {duration} seconds...")
-        # Add motor control logic here to move the robot backwards
-        time.sleep(duration)  # Simulate the movement duration
-        self.get_logger().info("✅ Finished moving backwards.")
+    def move_right(self, duration):
+        """Send 'd' command to move right for a specific duration."""
+        self.get_logger().info(f"➡️ Moving right for {duration} seconds...")
+        self.publish_motion_command('d', duration)
 
-    def strafe_front_right_diagonal(self, duration):
-        """Simulate strafing front-right diagonally."""
-        self.get_logger().info(f"↗️ Strafing front-right for {duration} seconds...")
-        # Add motor control logic here to strafe front-right diagonally
-        time.sleep(duration)  # Simulate the movement duration
-        self.get_logger().info("✅ Finished strafing front-right.")
+    def rotate_left(self, duration):
+        """Send 'q' command to rotate left for a specific duration."""
+        self.get_logger().info(f"🔄 Rotating left for {duration} seconds...")
+        self.publish_motion_command('q', duration)
 
-    def strafe_front_left_diagonal(self, duration):
-        """Simulate strafing front-left diagonally."""
-        self.get_logger().info(f"↖️ Strafing front-left for {duration} seconds...")
-        # Add motor control logic here to strafe front-left diagonally
-        time.sleep(duration)  # Simulate the movement duration
-        self.get_logger().info("✅ Finished strafing front-left.")
+    def rotate_right(self, duration):
+        """Send 'e' command to rotate right for a specific duration."""
+        self.get_logger().info(f"🔄 Rotating right for {duration} seconds...")
+        self.publish_motion_command('e', duration)
 
-    def strafe_back_left_diagonal(self, duration):
-        """Simulate strafing back-left diagonally."""
-        self.get_logger().info(f"↙️ Strafing back-left for {duration} seconds...")
-        # Add motor control logic here to strafe back-left diagonally
-        time.sleep(duration)  # Simulate the movement duration
-        self.get_logger().info("✅ Finished strafing back-left.")
-
-    def strafe_back_right_diagonal(self, duration):
-        """Simulate strafing back-right diagonally."""
-        self.get_logger().info(f"↘️ Strafing back-right for {duration} seconds...")
-        # Add motor control logic here to strafe back-right diagonally
-        time.sleep(duration)  # Simulate the movement duration
-        self.get_logger().info("✅ Finished strafing back-right.")
-
-    def turn_backwards(self, duration):
-        """Simulate turning backwards."""
-        self.get_logger().info(f"🔄 Turning backwards for {duration} seconds...")
-        # Add motor control logic here to turn the robot backwards
-        time.sleep(duration)  # Simulate the movement duration
-        self.get_logger().info("✅ Finished turning backwards.")
-
-    def handle_task(self, task):
+    def handle_task(self, task, duration):
         """Handle specific tasks based on user commands."""
-        try:
-            # Extract the duration from the command
-            duration_text = task.split("for")[1].strip().split()[0]  # Extract the duration part
-            try:
-                # Try converting spelled-out numbers to digits
-                duration = w2n.word_to_num(duration_text)
-            except ValueError:
-                # If conversion fails, assume it's already a digit
-                duration = int(duration_text)
-        except (IndexError, ValueError):
-            self.get_logger().error("❌ Invalid duration specified in the command.")
-            return
-
-        # Match the task to the corresponding movement function
-        if "move straight" in task:
-            self.move_straight(duration)
-        elif "move right" in task:
-            self.move_right(duration)
+        if "move forward" in task:
+            self.move_forward(duration)
+        elif "move backward" in task:
+            self.move_backward(duration)
         elif "move left" in task:
             self.move_left(duration)
-        elif "move backwards" in task:
-            self.move_backwards(duration)
-        elif "strafe front right diagonal" in task:
-            self.strafe_front_right_diagonal(duration)
-        elif "strafe front left diagonal" in task:
-            self.strafe_front_left_diagonal(duration)
-        elif "strafe back left diagonal" in task:
-            self.strafe_back_left_diagonal(duration)
-        elif "strafe back right diagonal" in task:
-            self.strafe_back_right_diagonal(duration)
-        elif "turn backwards" in task:
-            self.turn_backwards(duration)
+        elif "move right" in task:
+            self.move_right(duration)
+        elif "rotate left" in task:
+            self.rotate_left(duration)
+        elif "rotate right" in task:
+            self.rotate_right(duration)
         else:
             self.get_logger().info(f"🤔 Task not recognized: {task}")
+
+    def set_sarcasm_level(self, level):
+        """Set the sarcasm level (0–100)."""
+        if 0 <= level <= 100:
+            self.sarcasm_level = level
+            self.get_logger().info(f"🤔 Sarcasm level set to {level}.")
+        else:
+            self.get_logger().error("❌ Invalid sarcasm level. Please provide a value between 0 and 100.")
+
+    def extract_duration(self, prompt):
+        """Extract duration from the prompt using word2number."""
+        words = prompt.split()
+        for word in words:
+            try:
+                duration = w2n.word_to_num(word)
+                return duration
+            except ValueError:
+                continue
+        return 1  # Default duration if no number is found
 
 def main(args=None):
     rclpy.init(args=args)
