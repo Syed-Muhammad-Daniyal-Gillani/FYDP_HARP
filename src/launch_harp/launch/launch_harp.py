@@ -36,6 +36,18 @@ def generate_launch_description():
             executable='rosbridge_websocket',
             name='ROSBridge_Local_Server',
             output = 'screen'            
+        ),
+    Node(
+            package='teleops',
+            executable='teleops_node',
+            name='teleops',
+            output = 'screen'            
+        ),
+	Node(
+            package='mqtt',
+            executable='mqtt_node',
+            name='mqtt',
+            output = 'screen'            
         )
 	
 

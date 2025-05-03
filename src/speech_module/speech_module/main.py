@@ -14,6 +14,7 @@ import onnxruntime as ort
 import json
 import time
 from word2number import w2n  # Import the word2number library
+from ament_index_python.packages import get_package_share_directory
 
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
