@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray, String
-from neck_module.utils import RobotNeck, trackFace, pid_yaw, pid_pitch, find_esp32_port
+from neck_module.utils import RobotNeck, trackFace, pid_yaw, pid_pitch, find_esp32_port, pid_pitch_lookaround, pid_yaw_lookaround
 import threading
 import time
 
@@ -96,16 +96,7 @@ class NeckController(Node):
             (55, 50),
             (20, 50),
             (20, 50),
-            (55, 55)
-            # (90, 55),
-            # (70, 55),
-            # (55, 55),
-            # (35, 52),
-            # (30, 48),          
-            # (25, 45),
-            # (35, 45),
-            # (45, 50),
-            # (55, 50)  # Return to original position            
+            (55, 55)        
         ]
         for yaw, pitch in look_pattern:
             if self.stop_lookaround.is_set() or not rclpy.ok():
@@ -119,7 +110,7 @@ class NeckController(Node):
                 self.pre_error_x, self.pre_error_y = trackFace(
                     self.robot_neck,
                     (target_x, target_y),
-                    pid_yaw, pid_pitch,
+                    pid_yaw_lookaround, pid_pitch_lookaround,
                     self.pre_error_x, self.pre_error_y
                 )
                 if self.stop_lookaround.is_set() or not rclpy.ok():
