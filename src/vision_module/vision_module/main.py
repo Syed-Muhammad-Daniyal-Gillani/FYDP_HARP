@@ -3,6 +3,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray, String
 from std_srvs.srv import Trigger
 from vision_module.utils import *
+from vision_module.behavior_utils import *
 import cv2
 
 # Frame resolution
