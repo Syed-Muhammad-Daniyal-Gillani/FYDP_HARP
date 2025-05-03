@@ -6,6 +6,11 @@ video_in = None
 pid_yaw = [1.5, 0.5, 0.1]
 pid_pitch = [0.7, 0.6, 0.1]
 
+# PID tuning for lookaround
+pid_yaw_lookaround = [1.5, .005, 0.05]
+pid_pitch_lookaround = [0.7, 0.005, 0.04]
+
+
 class RobotNeck:
     def __init__(self, serial_port='/dev/ttyACM0', baud_rate=9600):
         self.servo_yaw = 55  # Default yaw angle (horizontal)
