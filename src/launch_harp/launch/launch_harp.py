@@ -38,13 +38,13 @@ def generate_launch_description():
             output = 'screen'            
         ),
     Node(
-            package='teleops',
+            package='teleops_module',
             executable='teleops_node',
             name='teleops',
             output = 'screen'            
         ),
 	Node(
-            package='mqtt',
+            package='mqtt_module',
             executable='mqtt_node',
             name='mqtt',
             output = 'screen'            
