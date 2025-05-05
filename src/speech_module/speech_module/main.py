@@ -26,7 +26,7 @@ class SpeechNode(Node):
 
         # Hardcoded API keys
         self.LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"  # Hardcoded Lemonfox API key
-        self.OPEN_API = "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"  # Hardcoded Open API key
+        self.OPEN_API = "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"  # Hardcoded Open API key
 
         # Initialize sarcasm level (default to 0 for no sarcasm)
         self.sarcasm_level = 0
@@ -43,7 +43,7 @@ class SpeechNode(Node):
 
         # Initialize PiperVoice (existing code)
         try:
-            self.get_logger().info(f"Loading PiperVoice with model: {self.model_path}, config: {self.config_path}")
+            self.get_logger().info(f"Loading PiperVoice with model: {self.model_path, self.config_path}")
             self.piper_voice = PiperVoice.load(self.model_path, self.config_path)
         except TypeError as e:
             self.get_logger().error(f"❌ PiperVoice Initialization Error: {e}")
@@ -108,16 +108,17 @@ class SpeechNode(Node):
                 continue  # Continue the conversation if no input is detected
 
             # Check if the prompt is a task command
-            if any(keyword in prompt.lower() for keyword in [
+            movement_keywords = [
                 "move forward", "move backward", "move left", "move right",
                 "rotate left", "rotate right"
-            ]):
+            ]
+            if any(keyword in prompt.lower() for keyword in movement_keywords):
                 # Extract duration from the prompt
                 duration = self.extract_duration(prompt)
                 self.handle_task(prompt.lower(), duration)  # Pass the command and duration to the task handler
                 continue  # Skip generating a response for task commands
 
-            # Get a response from the LLM
+            # If not a movement command, get a response from the LLM
             response = self.chat_with_llm(prompt)
             if not response:
                 self.get_logger().info("🤖 No response generated. Continuing conversation.")
