@@ -5,7 +5,6 @@ from std_srvs.srv import Trigger
 from vision_module.utils import *
 from vision_module.behavior_utils import *
 import cv2
-from behavior_classifier import run
 from ament_index_python.packages import get_package_share_directory
 import os
 import threading
@@ -29,14 +28,10 @@ class HARP_Vision(Node):
         self.behavior_timer = self.create_timer(0.2, self.publish_behavior)
         self.srv = self.create_service(Trigger, 'trigger_emotion_request', self.emotion_request_handle)
 
-        # Start the behavior classification in a separate thread
-        self.behavior_thread = threading.Thread(
-            target=run, args=(model_path, label_path, 2, 6, 0, FRAME_WIDTH, FRAME_HEIGHT)
-        )
-        self.behavior_thread.start()
-
     def track_face(self):
         cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)
+        if cam_img is None:
+            return
         img, (normalized_x, normalized_y), face_area, face_roi = detect_face(cam_img, FRAME_WIDTH, FRAME_HEIGHT)
 
         if face_area > 0:
@@ -49,12 +44,14 @@ class HARP_Vision(Node):
         cv2.imshow("Face Tracker", img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             self.get_logger().info("Shutting down vision module...")
-            self.behavior_model.stop()
             release_camera()
             rclpy.shutdown()
             
     def publish_behavior(self):
-        label, score = self.behavior_model.get_behavior()
+        cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)
+        if cam_img is None:
+            return 
+        label, score = run(model_path, label_path, 1, 6, cam_img)
         self.get_logger().info(f"Behavior detected: {label} with score {score}")
         if score > 0.5:
             msg = String()

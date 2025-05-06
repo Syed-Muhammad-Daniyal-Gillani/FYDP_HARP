@@ -8,7 +8,8 @@ import numpy as np
 import glob
 from deepface import DeepFace ## pip install deepface
 video_in = None
-
+import threading
+video_lock = threading.Lock()
 def get_cascade_path():
     # Get the path to the installed package
     package_share_directory = get_package_share_directory('vision_module')
@@ -31,7 +32,8 @@ def release_camera():
         video_in = None
 
 def getVideo(width_, height_):
-    success, img = video_in.read()
+    with video_lock:
+        success, img = video_in.read()
     img_in = cv2.resize(img, (width_, height_))
     return img_in
 
