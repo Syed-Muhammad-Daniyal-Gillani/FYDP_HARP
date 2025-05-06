@@ -5,13 +5,6 @@ from std_srvs.srv import Trigger
 from vision_module.utils import *
 from vision_module.behavior_utils import *
 import cv2
-from ament_index_python.packages import get_package_share_directory
-import os
-import threading
-
-resource_path = os.path.join(get_package_share_directory('vision_module'), 'resource')
-model_path = os.path.join(resource_path, '2.tflite')
-label_path = os.path.join(resource_path, 'kinetics600_label_map.txt')
 # Frame resolution
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
@@ -51,7 +44,7 @@ class HARP_Vision(Node):
         cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)
         if cam_img is None:
             return 
-        label, score = run(model_path, label_path, 1, 6, cam_img)
+        label, score = run(cam_img)
         self.get_logger().info(f"Behavior detected: {label} with score {score}")
         if score > 0.5:
             msg = String()

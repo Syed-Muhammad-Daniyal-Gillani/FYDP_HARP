@@ -5,6 +5,13 @@ import queue
 import numpy as np
 from typing import List, NamedTuple
 from tflite_runtime.interpreter import Interpreter
+from ament_index_python.packages import get_package_share_directory
+import os
+resource_path = os.path.join(get_package_share_directory('vision_module'), 'resource')
+
+model_path = os.path.join(resource_path, '2.tflite')
+label_path = os.path.join(resource_path, 'kinetics600_label_map.txt')
+
 
 # Visualization parameters
 _ROW_SIZE = 20  # pixels
@@ -93,14 +100,11 @@ class VideoClassifier:
         results = [r for r in results if r.score >= self._options.score_threshold]
         return results[:self._options.max_results]
 
+options = VideoClassifierOptions(num_threads=6, max_results=1)
+classifier = VideoClassifier(model_path, label_path, options)
 
-def run(model_path: str, label_path: str, max_results: int,
-        num_threads: int, camera_frame):
+def run(camera_frame):
     """Classify a single frame and return top label + score (no threading)."""
-
-    # Setup classifier (consider moving this OUTSIDE the function and initializing once for speed)
-    options = VideoClassifierOptions(num_threads=num_threads, max_results=max_results)
-    classifier = VideoClassifier(model_path, label_path, options)
 
     # Flip and preprocess frame
     frame = cv2.flip(camera_frame, 1)
