@@ -12,4 +12,4 @@ sounddevice
 numpy
 PyAudio
 paho-mqtt
-word2number
+word2numberS
