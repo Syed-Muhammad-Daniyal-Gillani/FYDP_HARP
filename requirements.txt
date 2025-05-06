@@ -11,3 +11,5 @@ SpeechRecognition
 sounddevice
 numpy
 PyAudio
+paho-mqtt
+word2number
