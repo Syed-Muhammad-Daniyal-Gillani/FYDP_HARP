@@ -5,7 +5,6 @@ from std_srvs.srv import Trigger
 from vision_module.utils import *
 from vision_module.behavior_utils import *
 import cv2
-
 # Frame resolution
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
@@ -17,11 +16,15 @@ class HARP_Vision(Node):
     def __init__(self):
         super().__init__('harp_vision')
         self.publisher_ = self.create_publisher(Float32MultiArray, 'neck_coordinates', 1)
-        self.timer = self.create_timer(0.03, self.track_face)  # Runs every 0.03 seconds (~33Hz)
+        self.behavior_pub = self.create_publisher(String, 'user_behavior', 1)
+        self.timer = self.create_timer(0.03, self.track_face)
+        self.behavior_timer = self.create_timer(0.2, self.publish_behavior)
         self.srv = self.create_service(Trigger, 'trigger_emotion_request', self.emotion_request_handle)
 
     def track_face(self):
         cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)
+        if cam_img is None:
+            return
         img, (normalized_x, normalized_y), face_area, face_roi = detect_face(cam_img, FRAME_WIDTH, FRAME_HEIGHT)
 
         if face_area > 0:
@@ -36,6 +39,19 @@ class HARP_Vision(Node):
             self.get_logger().info("Shutting down vision module...")
             release_camera()
             rclpy.shutdown()
+            
+    def publish_behavior(self):
+        cam_img = getVideo(FRAME_WIDTH, FRAME_HEIGHT)
+        if cam_img is None:
+            return 
+        label, score = run(cam_img)
+        self.get_logger().info(f"Behavior detected: {label} with score {score}")
+        if score > 0.5:
+            msg = String()
+            msg.data = label
+            self.behavior_pub.publish(msg)
+            self.get_logger().info(f"Published behavior: {label} ({score:.2f})")
+
 
     #Emotion request handle to detect emotion when requested
     def emotion_request_handle(self, request, response): 
