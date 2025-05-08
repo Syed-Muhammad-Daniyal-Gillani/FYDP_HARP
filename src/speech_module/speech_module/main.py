@@ -26,14 +26,14 @@ class SpeechNode(Node):
 
         # Hardcoded API keys
         self.LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"  # Hardcoded Lemonfox API key
-        self.OPEN_API = "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"  # Hardcoded Open API key
+        self.OPEN_API = "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"  # Hardcoded Open API key
 
         # Initialize sarcasm level (default to 0 for no sarcasm)
         self.sarcasm_level = 0
 
         # Existing publishers and subscriptions
         self.publisher_ = self.create_publisher(String, 'harp_response', 10)
-        self.subscription = self.create_subscription(String, 'harp_trigger', self.trigger_callback, 10)
+        self.subscription = self.create_subscription(String, 'user_behavior', self.behavior_callback, 10)
 
         # New publisher for motion commands
         self.motion_publisher = self.create_publisher(String, 'motion_command', 10)
@@ -93,13 +93,23 @@ class SpeechNode(Node):
 
         return model_path, config_path
 
-    def trigger_callback(self, msg):
-        self.get_logger().info("🎤 Manual trigger received...")
-        self.listen_and_respond()
+    def behavior_callback(self, msg):
+        """Callback to handle behavior messages."""
+        self.get_logger().warn(f"🎤 Behavior message received: {msg.data}")
 
-    def listen_and_respond(self):
-        """Handle a complete conversation after detecting the hotword."""
-        self.wait_for_hotword()  # Detect the hotword once at the start
+        # Check if the behavior indicates a waving hand
+        if "waving hand" in msg.data.lower():
+            self.get_logger().info("👋 Waving hand detected! Activating LLM directly...")
+            self.speak("How can I help you?")  # Speak the same statement as when activated by hotword
+            self.listen_and_respond(bypass_hotword=True)  # Trigger the LLM interaction directly
+        else:
+            self.get_logger().info("🤔 Behavior does not indicate waving hand. Ignoring.")
+
+    def listen_and_respond(self, bypass_hotword=False):
+        """Handle a complete conversation, optionally bypassing hotword detection."""
+        if not bypass_hotword:
+            self.wait_for_hotword()  # Detect the hotword once at the start
+
         while True:
             # Listen for user input
             prompt = self.listen_without_hotword()  # Use a method that skips hotword detection
@@ -468,10 +478,11 @@ class SpeechNode(Node):
         words = prompt.split()
         for word in words:
             try:
-                duration = w2n.word_to_num(word)
+                duration = w2n.word_to_num(word)  # Convert word to a number
                 return duration
             except ValueError:
                 continue
+        self.get_logger().info("⏱️ No duration specified. Defaulting to 1 second.")
         return 1  # Default duration if no number is found
 
 def main(args=None):

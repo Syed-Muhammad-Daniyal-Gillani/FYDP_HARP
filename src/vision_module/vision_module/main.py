@@ -46,11 +46,12 @@ class HARP_Vision(Node):
             return 
         label, score = run(cam_img)
         self.get_logger().info(f"Behavior detected: {label} with score {score}")
-        if score > 0.5:
+        if score > 0.6 and label == "waving hand":  # Adjust threshold as needed
             msg = String()
             msg.data = label
             self.behavior_pub.publish(msg)
-            self.get_logger().info(f"Published behavior: {label} ({score:.2f})")
+            # self.get_logger().info(f"Published behavior: {label} ({score:.2f})")
+            self.get_logger().info(f"Published behavior: {msg}")
 
 
     #Emotion request handle to detect emotion when requested
