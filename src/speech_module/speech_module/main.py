@@ -26,7 +26,7 @@ class SpeechNode(Node):
 
         # Hardcoded API keys
         self.LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"  # Hardcoded Lemonfox API key
-        self.OPEN_API = "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"  # Hardcoded Open API key
+        self.OPEN_API = "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"  # Hardcoded Open API key
 
         # Initialize sarcasm level (default to 0 for no sarcasm)
         self.sarcasm_level = 0
@@ -410,38 +410,44 @@ class SpeechNode(Node):
     def move_forward(self, duration):
         """Send 'w' command to move forward for a specific duration."""
         self.get_logger().info(f"🚗 Moving forward for {duration} seconds...")
-        self.publish_motion_command('w', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('w', duration)  # Send 'w' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def move_backward(self, duration):
         """Send 'x' command to move backward for a specific duration."""
         self.get_logger().info(f"🔙 Moving backward for {duration} seconds...")
-        self.publish_motion_command('x', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('x', duration)  # Send 'x' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def move_left(self, duration):
         """Send 'a' command to move left for a specific duration."""
         self.get_logger().info(f"⬅️ Moving left for {duration} seconds...")
-        self.publish_motion_command('a', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('a', duration)  # Send 'a' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def move_right(self, duration):
         """Send 'd' command to move right for a specific duration."""
         self.get_logger().info(f"➡️ Moving right for {duration} seconds...")
-        self.publish_motion_command('d', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('d', duration)  # Send 'd' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def rotate_left(self, duration):
         """Send 'q' command to rotate left for a specific duration."""
         self.get_logger().info(f"🔄 Rotating left for {duration} seconds...")
-        self.publish_motion_command('q', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('q', duration)  # Send 'q' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def rotate_right(self, duration):
         """Send 'e' command to rotate right for a specific duration."""
         self.get_logger().info(f"🔄 Rotating right for {duration} seconds...")
-        self.publish_motion_command('e', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('e', duration)  # Send 'e' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def stop_motion(self):
         """Send 's' command to stop the robot."""
