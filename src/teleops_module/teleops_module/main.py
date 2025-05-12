@@ -19,7 +19,7 @@ class TeleopsNode(Node):
 
         try:
             arduino_port = find_arduino_port()
-            self.arduino = serial.Serial(arduino_port, baudrate=9600, timeout=1)
+            self.arduino = serial.Serial(arduino_port, baudrate=57600, timeout=1)
             time.sleep(2)
             self.get_logger().info(f"Connected to Arduino on {arduino_port}")
         except Exception as e:
