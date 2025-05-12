@@ -103,6 +103,10 @@ class VideoClassifier:
 options = VideoClassifierOptions(num_threads=6, max_results=1)
 classifier = VideoClassifier(model_path, label_path, options)
 
+def reset():
+    classifier.clear()
+    return
+
 def run(camera_frame):
     """Classify a single frame and return top label + score (no threading)."""
 
