@@ -26,14 +26,14 @@ class SpeechNode(Node):
 
         # Hardcoded API keys
         self.LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"  # Hardcoded Lemonfox API key
-        self.OPEN_API = "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"  # Hardcoded Open API key
+        self.OPEN_API = "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"  # Hardcoded Open API key
 
         # Initialize sarcasm level (default to 0 for no sarcasm)
         self.sarcasm_level = 0
 
         # Existing publishers and subscriptions
         self.publisher_ = self.create_publisher(String, 'harp_response', 10)
-        self.subscription = self.create_subscription(String, 'harp_trigger', self.trigger_callback, 10)
+        self.subscription = self.create_subscription(String, 'user_behavior', self.behavior_callback, 10)
 
         # New publisher for motion commands
         self.motion_publisher = self.create_publisher(String, 'motion_command', 10)
@@ -93,13 +93,23 @@ class SpeechNode(Node):
 
         return model_path, config_path
 
-    def trigger_callback(self, msg):
-        self.get_logger().info("🎤 Manual trigger received...")
-        self.listen_and_respond()
+    def behavior_callback(self, msg):
+        """Callback to handle behavior messages."""
+        self.get_logger().warn(f"🎤 Behavior message received: {msg.data}")
 
-    def listen_and_respond(self):
-        """Handle a complete conversation after detecting the hotword."""
-        self.wait_for_hotword()  # Detect the hotword once at the start
+        # Check if the behavior indicates a waving hand
+        if "waving hand" in msg.data.lower():
+            self.get_logger().info("👋 Waving hand detected! Activating LLM directly...")
+            self.speak("How can I help you?")  # Speak the same statement as when activated by hotword
+            self.listen_and_respond(bypass_hotword=True)  # Trigger the LLM interaction directly
+        else:
+            self.get_logger().info("🤔 Behavior does not indicate waving hand. Ignoring.")
+
+    def listen_and_respond(self, bypass_hotword=False):
+        """Handle a complete conversation, optionally bypassing hotword detection."""
+        if not bypass_hotword:
+            self.wait_for_hotword()  # Detect the hotword once at the start
+
         while True:
             # Listen for user input
             prompt = self.listen_without_hotword()  # Use a method that skips hotword detection
@@ -400,38 +410,44 @@ class SpeechNode(Node):
     def move_forward(self, duration):
         """Send 'w' command to move forward for a specific duration."""
         self.get_logger().info(f"🚗 Moving forward for {duration} seconds...")
-        self.publish_motion_command('w', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('w', duration)  # Send 'w' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def move_backward(self, duration):
         """Send 'x' command to move backward for a specific duration."""
         self.get_logger().info(f"🔙 Moving backward for {duration} seconds...")
-        self.publish_motion_command('x', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('x', duration)  # Send 'x' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def move_left(self, duration):
         """Send 'a' command to move left for a specific duration."""
         self.get_logger().info(f"⬅️ Moving left for {duration} seconds...")
-        self.publish_motion_command('a', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('a', duration)  # Send 'a' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def move_right(self, duration):
         """Send 'd' command to move right for a specific duration."""
         self.get_logger().info(f"➡️ Moving right for {duration} seconds...")
-        self.publish_motion_command('d', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('d', duration)  # Send 'd' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def rotate_left(self, duration):
         """Send 'q' command to rotate left for a specific duration."""
         self.get_logger().info(f"🔄 Rotating left for {duration} seconds...")
-        self.publish_motion_command('q', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('q', duration)  # Send 'q' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def rotate_right(self, duration):
         """Send 'e' command to rotate right for a specific duration."""
         self.get_logger().info(f"🔄 Rotating right for {duration} seconds...")
-        self.publish_motion_command('e', duration)
-        self.create_timer(duration, self.stop_motion)
+        self.publish_motion_command('e', duration)  # Send 'e' command
+        time.sleep(duration)  # Wait for the specified duration
+        self.stop_motion()  # Stop the motion
 
     def stop_motion(self):
         """Send 's' command to stop the robot."""
@@ -468,10 +484,11 @@ class SpeechNode(Node):
         words = prompt.split()
         for word in words:
             try:
-                duration = w2n.word_to_num(word)
+                duration = w2n.word_to_num(word)  # Convert word to a number
                 return duration
             except ValueError:
                 continue
+        self.get_logger().info("⏱️ No duration specified. Defaulting to 1 second.")
         return 1  # Default duration if no number is found
 
 def main(args=None):
