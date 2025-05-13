@@ -29,7 +29,6 @@ qos_profile = QoSProfile(
 
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
-MIC = sr.Microphone(device_index=None)
 
 class SpeechNode(Node):
     def __init__(self):
@@ -124,7 +123,7 @@ class SpeechNode(Node):
 
         while self.activate_speech:
             # Listen for user input
-            prompt = self.listen_without_hotword()  # Use a method that skips hotword detection
+            prompt = self.listen()
             if not prompt:
                 self.get_logger().info("🔇 No input detected. Continuing conversation.")
                 continue  # Continue the conversation if no input is detected
@@ -172,7 +171,7 @@ class SpeechNode(Node):
                 self.get_logger().info("🎤 Waiting for the hotword...")
 
                 # Continuously listen for the hotword
-                with MIC as source:
+                with sr.Microphone() as source:
                     # hotword_detected = False
                     while not self.activate_speech:
                         RECOGNIZER.adjust_for_ambient_noise(source, duration=0.5)
@@ -216,87 +215,33 @@ class SpeechNode(Node):
 
     def listen(self):
         """Listen for user input after hotword detection."""
-        try:
-            self.wait_for_hotword()  # Wait for the hotword first
-
-            # Start recording after hotword detection
-            with MIC as source:
-                RECOGNIZER.adjust_for_ambient_noise(source, duration=0.5)
-                self.get_logger().info("🎤 Speak now...")
-                audio = RECOGNIZER.listen(source)
-
-            # Save the recorded audio to a file
-            with open(AUDIO_FILE, "wb") as f:
-                f.write(audio.get_wav_data())
-
-            self.get_logger().info("☁️ Uploading audio to Lemonfox Whisper API for transcription...")
-            with open(AUDIO_FILE, "rb") as f:
-                response = requests.post(
-                    "https://api.lemonfox.ai/v1/audio/transcriptions",
-                    headers={
-                        "Authorization": f"Bearer {self.LEMONFOX_API_KEY}"
-                    },
-                    files={
-                        "file": (AUDIO_FILE, f, "audio/wav")
-                    },
-                    data={
-                        "language": "english",  # Set language to English
-                        "response_format": "json"
-                    }
-                )
-
-            response.raise_for_status()
-            transcription = response.json().get("text", "")
-            self.get_logger().info(f"📝 Transcribed: {transcription}")
-            return transcription
-
-        except requests.exceptions.RequestException as e:
-            self.get_logger().error(f"❌ Whisper API Error: {e}")
-            return ""
-        except Exception as e:
-            self.get_logger().error(f"❌ Listening Error: {e}")
-            return ""
-
-    def listen_without_hotword(self):
-        """Listen for user input without detecting the hotword."""
-        try:
-            # Start recording directly without hotword detection
-            with MIC as source:
-                RECOGNIZER.adjust_for_ambient_noise(source, duration=0.5)
-                self.get_logger().info("🎤 Speak now...")
-                audio = RECOGNIZER.listen(source)
-
-            # Save the recorded audio to a file
-            with open(AUDIO_FILE, "wb") as f:
-                f.write(audio.get_wav_data())
-
-            self.get_logger().info("☁️ Uploading audio to Lemonfox Whisper API for transcription...")
-            with open(AUDIO_FILE, "rb") as f:
-                response = requests.post(
-                    "https://api.lemonfox.ai/v1/audio/transcriptions",
-                    headers={
-                        "Authorization": f"Bearer {self.LEMONFOX_API_KEY}"
-                    },
-                    files={
-                        "file": (AUDIO_FILE, f, "audio/wav")
-                    },
-                    data={
-                        "language": "english",  # Set language to English
-                        "response_format": "json"
-                    }
-                )
-
-            response.raise_for_status()
-            transcription = response.json().get("text", "")
-            self.get_logger().info(f"📝 Transcribed: {transcription}")
-            return transcription
-
-        except requests.exceptions.RequestException as e:
-            self.get_logger().error(f"❌ Whisper API Error: {e}")
-            return ""
-        except Exception as e:
-            self.get_logger().error(f"❌ Listening Error: {e}")
-            return ""
+        # Start recording after hotword detection
+        with sr.Microphone() as source:
+            RECOGNIZER.adjust_for_ambient_noise(source, duration=0.5)
+            self.get_logger().info("🎤 Speak now...")
+            audio = RECOGNIZER.listen(source)
+        # Save the recorded audio to a file
+        with open(AUDIO_FILE, "wb") as f:
+            f.write(audio.get_wav_data())
+        self.get_logger().info("☁️ Uploading audio to Lemonfox Whisper API for transcription...")
+        with open(AUDIO_FILE, "rb") as f:
+            response = requests.post(
+                "https://api.lemonfox.ai/v1/audio/transcriptions",
+                headers={
+                    "Authorization": f"Bearer {self.LEMONFOX_API_KEY}"
+                },
+                files={
+                    "file": (AUDIO_FILE, f, "audio/wav")
+                },
+                data={
+                    "language": "english",  # Set language to English
+                    "response_format": "json"
+                }
+            )
+        response.raise_for_status()
+        transcription = response.json().get("text", "")
+        self.get_logger().info(f"📝 Transcribed: {transcription}")
+        return transcription
 
     def chat_with_llm(self, prompt):
         """Send a prompt to the LLM and return its response, with sarcasm control."""
