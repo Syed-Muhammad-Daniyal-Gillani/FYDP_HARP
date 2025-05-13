@@ -15,6 +15,16 @@ import json
 import time
 from word2number import w2n  # Import the word2number library
 from ament_index_python.packages import get_package_share_directory
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
+from rclpy.duration import Duration
+
+qos_profile = QoSProfile(
+    reliability=ReliabilityPolicy.BEST_EFFORT,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=1,
+    durability=DurabilityPolicy.VOLATILE,
+    lifespan=Duration(seconds=1)
+)
 
 AUDIO_FILE = "input.wav"
 RECOGNIZER = sr.Recognizer()
@@ -33,7 +43,7 @@ class SpeechNode(Node):
 
         # Existing publishers and subscriptions
         self.publisher_ = self.create_publisher(String, 'harp_response', 10)
-        self.subscription = self.create_subscription(String, 'user_behavior', self.behavior_callback, 10)
+        self.subscription = self.create_subscription(String, 'user_behavior', self.behavior_callback, qos_profile)
 
         # New publisher for motion commands
         self.motion_publisher = self.create_publisher(String, 'motion_command', 10)
@@ -107,10 +117,10 @@ class SpeechNode(Node):
 
     def listen_and_respond(self, bypass_hotword=False):
         """Handle a complete conversation, optionally bypassing hotword detection."""
-        if not bypass_hotword:
-            self.wait_for_hotword()  # Detect the hotword once at the start
+        # if not bypass_hotword:
+        #     self.wait_for_hotword()  # Detect the hotword once at the start
 
-        while True:
+        while bypass_hotword:
             # Listen for user input
             prompt = self.listen_without_hotword()  # Use a method that skips hotword detection
             if not prompt:
@@ -146,59 +156,60 @@ class SpeechNode(Node):
             end_phrases = ["bye", "bye!"]
             if any(phrase in prompt.lower() for phrase in end_phrases):
                 self.get_logger().info("👋 Ending conversation as per user request.")
+                bypass_hotword = False
                 break  # End the conversation if the user says "bye"
 
-    def wait_for_hotword(self):
-        """Wait for a hotword and respond with a prompt."""
-        try:
-            self.get_logger().info("🎤 Waiting for the hotword...")
+    # def wait_for_hotword(self):
+    #     """Wait for a hotword and respond with a prompt."""
+    #     try:
+    #         self.get_logger().info("🎤 Waiting for the hotword...")
 
-            # Continuously listen for the hotword
-            with MIC as source:
-                hotword_detected = False  # Flag to track if the hotword is detected
-                while not hotword_detected:
-                    RECOGNIZER.adjust_for_ambient_noise(source, duration=0.5)
-                    self.get_logger().info("🎤 Listening for the hotword...")
-                    audio = RECOGNIZER.listen(source)
+    #         # Continuously listen for the hotword
+    #         with MIC as source:
+    #             hotword_detected = False  # Flag to track if the hotword is detected
+    #             while not hotword_detected:
+    #                 RECOGNIZER.adjust_for_ambient_noise(source, duration=0.5)
+    #                 self.get_logger().info("🎤 Listening for the hotword...")
+    #                 audio = RECOGNIZER.listen(source)
 
-                    try:
-                        # Convert audio to text using the Lemonfox Whisper API
-                        with open(AUDIO_FILE, "wb") as f:
-                            f.write(audio.get_wav_data())
+    #                 try:
+    #                     # Convert audio to text using the Lemonfox Whisper API
+    #                     with open(AUDIO_FILE, "wb") as f:
+    #                         f.write(audio.get_wav_data())
 
-                        self.get_logger().info("☁️ Uploading audio to Lemonfox Whisper API for hotword detection...")
-                        with open(AUDIO_FILE, "rb") as f:
-                            response = requests.post(
-                                "https://api.lemonfox.ai/v1/audio/transcriptions",
-                                headers={
-                                    "Authorization": f"Bearer {self.LEMONFOX_API_KEY}"
-                                },
-                                files={
-                                    "file": (AUDIO_FILE, f, "audio/wav")
-                                },
-                                data={
-                                    "language": "english",  # Set language to English
-                                    "response_format": "json"
-                                }
-                            )
+    #                     self.get_logger().info("☁️ Uploading audio to Lemonfox Whisper API for hotword detection...")
+    #                     with open(AUDIO_FILE, "rb") as f:
+    #                         response = requests.post(
+    #                             "https://api.lemonfox.ai/v1/audio/transcriptions",
+    #                             headers={
+    #                                 "Authorization": f"Bearer {self.LEMONFOX_API_KEY}"
+    #                             },
+    #                             files={
+    #                                 "file": (AUDIO_FILE, f, "audio/wav")
+    #                             },
+    #                             data={
+    #                                 "language": "english",  # Set language to English
+    #                                 "response_format": "json"
+    #                             }
+    #                         )
 
-                        response.raise_for_status()
-                        detected_text = response.json().get("text", "").lower()
-                        self.get_logger().info(f"📝 Detected: {detected_text}")
+    #                     response.raise_for_status()
+    #                     detected_text = response.json().get("text", "").lower()
+    #                     self.get_logger().info(f"📝 Detected: {detected_text}")
 
-                        # Check if the hotword is in the detected text
-                        hotwords = ["hi ", "hi!", "hey!", "hello!", "hello", " hey", "harp", "harp!"]  # Add your hotwords here
-                        if any(hotword in detected_text for hotword in hotwords):
-                            self.get_logger().info("🎤 Hotword detected!")
-                            self.speak("How can I help you?")
-                            hotword_detected = True  # Set the flag to exit the loop
-                    except requests.exceptions.RequestException as e:
-                        self.get_logger().error(f"❌ Whisper API Error during hotword detection: {e}")
-                    except Exception as e:
-                        self.get_logger().info("🔇 Could not detect hotword, retrying...")
+    #                     # Check if the hotword is in the detected text
+    #                     hotwords = ["hi ", "hi!", "hey!", "hello!", "hello", " hey", "harp", "harp!"]  # Add your hotwords here
+    #                     if any(hotword in detected_text for hotword in hotwords):
+    #                         self.get_logger().info("🎤 Hotword detected!")
+    #                         self.speak("How can I help you?")
+    #                         hotword_detected = True  # Set the flag to exit the loop
+    #                 except requests.exceptions.RequestException as e:
+    #                     self.get_logger().error(f"❌ Whisper API Error during hotword detection: {e}")
+    #                 except Exception as e:
+    #                     self.get_logger().info("🔇 Could not detect hotword, retrying...")
 
-        except Exception as e:
-            self.get_logger().error(f"❌ Error in hotword detection: {e}")
+    #     except Exception as e:
+    #         self.get_logger().error(f"❌ Error in hotword detection: {e}")
 
     def listen(self):
         """Listen for user input after hotword detection."""
