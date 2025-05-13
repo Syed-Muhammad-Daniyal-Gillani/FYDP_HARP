@@ -38,6 +38,7 @@ class SpeechNode(Node):
         # Hardcoded API keys
         self.LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"  # Hardcoded Lemonfox API key
         self.OPEN_API = "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"  # Hardcoded Open API key
+        self.hotword_lock = threading.Lock()
         threading.Thread(target=self.wait_for_hotword, daemon=True).start()
         # Initialize sarcasm level (default to 0 for no sarcasm)
         self.sarcasm_level = 0
@@ -158,56 +159,60 @@ class SpeechNode(Node):
             if any(phrase in prompt.lower() for phrase in end_phrases):
                 self.get_logger().info("👋 Ending conversation as per user request.")
                 self.activate_speech = False
-                self.wait_for_hotword()
+                threading.Thread(target=self.wait_for_hotword, daemon=True).start()
                 break
 
     def wait_for_hotword(self):
+        if self.hotword_lock.locked():
+            return
         """Wait for a hotword and respond with a prompt."""
-        try:
-            self.get_logger().info("🎤 Waiting for the hotword...")
+        
+        with self.hotword_lock:
+            try:
+                self.get_logger().info("🎤 Waiting for the hotword...")
 
-            # Continuously listen for the hotword
-            with MIC as source:
-                # hotword_detected = False
-                while not self.activate_speech:
-                    RECOGNIZER.adjust_for_ambient_noise(source, duration=0.5)
-                    self.get_logger().info("🎤 Listening for the hotword...")
-                    audio = RECOGNIZER.listen(source)
-                    try:
-                        # Convert audio to text using the Lemonfox Whisper API
-                        with open(AUDIO_FILE, "wb") as f:
-                            f.write(audio.get_wav_data())
-                        self.get_logger().info("☁️ Uploading audio to Lemonfox Whisper API for hotword detection...")
-                        with open(AUDIO_FILE, "rb") as f:
-                            response = requests.post(
-                                "https://api.lemonfox.ai/v1/audio/transcriptions",
-                                headers={
-                                    "Authorization": f"Bearer {self.LEMONFOX_API_KEY}"
-                                },
-                                files={
-                                    "file": (AUDIO_FILE, f, "audio/wav")
-                                },
-                                data={
-                                    "language": "english",  # Set language to English
-                                    "response_format": "json"
-                                }
-                            )
-                        response.raise_for_status()
-                        detected_text = response.json().get("text", "").lower()
-                        self.get_logger().info(f"📝 Detected: {detected_text}")
-                        # Check if the hotword is in the detected text
-                        hotwords = ["hi ", "hi!", "hey!", "hello!", "hello", " hey", "harp", "harp!"]  # Add your hotwords here
-                        if any(hotword in detected_text for hotword in hotwords) and self.activate_speech ==False:
-                            self.get_logger().info("🎤 Hotword detected!")
-                            self.speak("How can I help you?")
-                            self.activate_speech = True
-                    except requests.exceptions.RequestException as e:
-                        self.get_logger().error(f"❌ Whisper API Error during hotword detection: {e}")
-                    except Exception as e:
-                        self.get_logger().info("🔇 Could not detect hotword, retrying...")
+                # Continuously listen for the hotword
+                with MIC as source:
+                    # hotword_detected = False
+                    while not self.activate_speech:
+                        RECOGNIZER.adjust_for_ambient_noise(source, duration=0.5)
+                        self.get_logger().info("🎤 Listening for the hotword...")
+                        audio = RECOGNIZER.listen(source)
+                        try:
+                            # Convert audio to text using the Lemonfox Whisper API
+                            with open(AUDIO_FILE, "wb") as f:
+                                f.write(audio.get_wav_data())
+                            self.get_logger().info("☁️ Uploading audio to Lemonfox Whisper API for hotword detection...")
+                            with open(AUDIO_FILE, "rb") as f:
+                                response = requests.post(
+                                    "https://api.lemonfox.ai/v1/audio/transcriptions",
+                                    headers={
+                                        "Authorization": f"Bearer {self.LEMONFOX_API_KEY}"
+                                    },
+                                    files={
+                                        "file": (AUDIO_FILE, f, "audio/wav")
+                                    },
+                                    data={
+                                        "language": "english",  # Set language to English
+                                        "response_format": "json"
+                                    }
+                                )
+                            response.raise_for_status()
+                            detected_text = response.json().get("text", "").lower()
+                            self.get_logger().info(f"📝 Detected: {detected_text}")
+                            # Check if the hotword is in the detected text
+                            hotwords = ["hi ", "hi!", "hey!", "hello!", "hello", " hey", "harp", "harp!"]  # Add your hotwords here
+                            if any(hotword in detected_text for hotword in hotwords) and self.activate_speech ==False:
+                                self.get_logger().info("🎤 Hotword detected!")
+                                self.speak("How can I help you?")
+                                self.activate_speech = True
+                        except requests.exceptions.RequestException as e:
+                            self.get_logger().error(f"❌ Whisper API Error during hotword detection: {e}")
+                        except Exception as e:
+                            self.get_logger().info("🔇 Could not detect hotword, retrying...")
 
-        except Exception as e:
-            self.get_logger().error(f"❌ Error in hotword detection: {e}")
+            except Exception as e:
+                self.get_logger().error(f"❌ Error in hotword detection: {e}")
 
     def listen(self):
         """Listen for user input after hotword detection."""
