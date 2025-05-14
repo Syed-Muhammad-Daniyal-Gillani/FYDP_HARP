@@ -17,13 +17,13 @@ def get_cascade_path():
     cascade_path = os.path.join(package_share_directory, 'resource', 'haarcascade_frontalface_default.xml')
     return cascade_path
 
-
 def initialize_camera():
     global video_in
     if video_in is None:
         video_in = get_camera()
-        if not video_in.isOpened():
-            raise ValueError(f"Camera could not be opened.")
+        if video_in is None or not video_in.isOpened():
+            raise ValueError("Camera could not be opened.")
+        print("[INFO] Camera initialized successfully.")
 
 def release_camera():
     global video_in
@@ -32,11 +32,28 @@ def release_camera():
         video_in = None
 
 def getVideo(width_, height_):
+    global video_in
+    if video_in is None:
+        try:
+            initialize_camera()
+        except Exception as e:
+            print(f"[ERROR] Failed to initialize camera: {e}")
+            return None
+
     with video_lock:
         success, img = video_in.read()
-    img_in = cv2.resize(img, (width_, height_))
-    return img_in
 
+    if not success or img is None:
+        print("[WARN] Camera read failed or returned empty frame.")
+        return None
+
+    try:
+        img_in = cv2.resize(img, (width_, height_))
+    except cv2.error as e:
+        print(f"[ERROR] OpenCV resize failed: {e}")
+        return None
+
+    return img_in
 def detect_face(img, frame_width, frame_height):
     """
     Detects faces in an image and calculates normalized center coordinates.
