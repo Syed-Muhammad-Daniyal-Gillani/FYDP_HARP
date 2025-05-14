@@ -116,17 +116,30 @@ class SpeechNode(Node):
         else:
             self.get_logger().info("🤔 Behavior does not indicate waving hand. Ignoring.")
 
-    def listen_and_respond(self):
+    def listen_and_respond(self, bypass_hotword=False):
         """Handle a complete conversation, optionally bypassing hotword detection."""
-        # if not self.activate_speech:
-        #     self.wait_for_hotword()
+        if not bypass_hotword:
+            self.wait_for_activation()  # Wait for either hotword or behavior
 
-        while self.activate_speech:
+        while True:
             # Listen for user input
-            prompt = self.listen()
+            prompt = self.listen_without_hotword()  # Use a method that skips hotword detection
             if not prompt:
                 self.get_logger().info("🔇 No input detected. Continuing conversation.")
                 continue  # Continue the conversation if no input is detected
+
+            self.get_logger().info(f"📝 User said: {prompt}")  # Log the user's input
+
+            # Ignore "thank you" to prevent sending it to the LLM
+            if "thank you" in prompt.lower():
+                self.get_logger().info("🙏 Ignoring 'thank you' as per user request.")
+                continue  # Skip processing this input
+
+            # Check if the conversation should end
+            end_phrases = ["bye", "bye!"]
+            if any(phrase in prompt.lower() for phrase in end_phrases):
+                self.get_logger().info("👋 Ending conversation as per user request.")
+                break  # End the conversation if the user says "bye"
 
             # Check if the prompt is a task command
             movement_keywords = [
@@ -152,14 +165,6 @@ class SpeechNode(Node):
             msg = String()
             msg.data = response
             self.publisher_.publish(msg)
-
-            # Check if the conversation should end
-            end_phrases = ["bye", "bye!"]
-            if any(phrase in prompt.lower() for phrase in end_phrases):
-                self.get_logger().info("👋 Ending conversation as per user request.")
-                self.activate_speech = False
-                threading.Thread(target=self.wait_for_hotword, daemon=True).start()
-                break
 
     def wait_for_hotword(self):
         if self.hotword_lock.locked():
