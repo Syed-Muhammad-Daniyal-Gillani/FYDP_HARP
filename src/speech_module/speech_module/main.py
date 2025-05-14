@@ -36,7 +36,7 @@ class SpeechNode(Node):
 
         # Hardcoded API keys
         self.LEMONFOX_API_KEY = "3z53h2KvRgHAWoVJXUdpL3SuOx777PZt"  # Hardcoded Lemonfox API key
-        self.OPEN_API = "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"  # Hardcoded Open API key
+        self.OPEN_API = "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"
         self.hotword_lock = threading.Lock()
         threading.Thread(target=self.wait_for_hotword, daemon=True).start()
         # Initialize sarcasm level (default to 0 for no sarcasm)
