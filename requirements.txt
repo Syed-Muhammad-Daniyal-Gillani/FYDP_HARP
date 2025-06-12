@@ -5,3 +5,11 @@ numpy
 deepface
 pyserial
 tf-keras
+piper-tts
+onnxruntime
+SpeechRecognition
+sounddevice
+numpy
+PyAudio
+paho-mqtt
+word2number

@@ -26,11 +26,29 @@ def generate_launch_description():
             output = 'screen'
         ),
         Node(
+            package='speech_module',
+            executable='speech_node',
+            name='Speech',
+            output = 'screen'
+        ),
+        Node(
             package='rosbridge_server',
             executable='rosbridge_websocket',
             name='ROSBridge_Local_Server',
             output = 'screen'            
+        ),
+    Node(
+            package='teleops_module',
+            executable='teleops_node',
+            name='teleops',
+            output = 'screen'            
+        ),
+	Node(
+            package='mqtt_module',
+            executable='mqtt_node',
+            name='mqtt',
+            output = 'screen'            
         )
-
+	
 
     ])

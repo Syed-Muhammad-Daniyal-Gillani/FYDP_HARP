@@ -10,7 +10,11 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),  # Keeps package metadata
         ('share/' + package_name, ['package.xml']),  # Ensures package.xml is installed
-        ('share/' + package_name + '/resource', ['resource/haarcascade_frontalface_default.xml']),  # INSTALLS haarcascade!
+        ('share/' + package_name + '/resource', [
+            'resource/haarcascade_frontalface_default.xml',
+            'resource/2.tflite',
+            'resource/kinetics600_label_map.txt'
+            ]),  # INSTALLS haarcascade!
     ],
     install_requires=['setuptools'],
     zip_safe=True,
