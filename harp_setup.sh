@@ -4,7 +4,7 @@
 set -e
 
 echo "🔧 Adding workspace setup to bashrc..."
-grep -qxF 'source ~/FYDP_HARP/install/setup.bash' ~/.bashrc || echo 'source ~/FYDP_HARP/install/setup.bash' >> ~/.bashrc
+grep -qxF 'source ~/fydp_harp/install/setup.bash' ~/.bashrc || echo 'source ~/fydp_harp/install/setup.bash' >> ~/.bashrc
 
 echo "🧹 Installing dependencies..."
 sudo apt update
