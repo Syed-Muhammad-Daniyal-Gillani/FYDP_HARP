@@ -5,11 +5,12 @@ numpy
 deepface
 pyserial
 tf-keras
+tflite-runtime
 piper-tts
 onnxruntime
 SpeechRecognition
 sounddevice
 numpy
-PyAudio
 paho-mqtt
 word2number
+PyAudio
