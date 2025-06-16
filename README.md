@@ -22,58 +22,78 @@ Install **ROS2 Humble** by following the official instructions:
 Clone the repository:
 
 ```bash
-git clone https://github.com/CEME-HARP/FYDP_HARP.git
-cd FYDP_HARP
+git clone https://github.com/Syed-Muhammad-Daniyal-Gillani/harp-humanoid-robot.git
+cd harp-humanoid-robot/
 ```
 
 Then run the following shell commands step-by-step:
 
 ```bash
-set -e
-
-echo "🔧 Adding workspace setup to bashrc..."
-grep -qxF 'source ~/fydp_harp/install/setup.bash' ~/.bashrc || echo 'source ~/fydp_harp/install/setup.bash' >> ~/.bashrc
-
-echo "🧹 Installing dependencies..."
 sudo apt update
-sudo apt install -y \
-  python3-colcon-common-extensions \
-  python3-pip \
-  python3-rosdep \
-  python3-argcomplete
-sudo apt install -y ros-humble-rosbridge-server python3-pyqt5 python3-pyqt5.qtwebengine
-sudo apt install -y libportaudio2 libportaudiocpp0 portaudio19-dev
-sudo apt install -y qtwayland5
-
-echo "📦 Installing Python dependencies using system Python..."
-pip install -r requirements.txt
-
-echo "🔨 Building the ROS 2 workspace..."
-colcon build
-
-echo "🛁 Sourcing workspace..."
-source install/setup.bash
-
-echo "🚀 HARP setup complete!"
-echo "To launch the workspace:"
-echo "ros2 launch launch_harp launch_harp.py"
+```
+```bash
+sudo apt install -y python3-colcon-common-extensions
+```
+```bash
+sudo apt install -y python3-pip
 ```
 
-To run the project:
+```bash
+sudo apt install -y python3-rosdep
+```
+
+```bash
+sudo apt install -y python3-argcomplete
+```
+
+```bash
+sudo apt install -y ros-humble-rosbridge-server
+```
+
+```bash
+sudo apt install -y python3-pyqt5 python3-pyqt5.qtwebengine
+```
+
+```bash
+sudo apt install -y libportaudio2 libportaudiocpp0 portaudio19-dev
+```
+
+```bash
+sudo apt install -y qtwayland5
+```
+
+```bash
+pip install -r requirements.txt
+```
+
+### 🔧 Add workspace setup to `.bashrc`
+
+```bash
+grep -qxF 'source ~/harp-humanoid-robot/install/setup.bash' ~/.bashrc || echo 'source ~/harp-humanoid-robot/install/setup.bash' >> ~/.bashrc
+```
+
+### 🔨 Build the ROS 2 workspace
+
+```bash
+colcon build
+```
+
+---
+
+### 🛁 Source the workspace
+
+```bash
+source install/setup.bash
+```
+
+---
+
+### 🚀 Launch the HARP system
 
 ```bash
 ros2 launch launch_harp launch_harp.py
 ```
 
-If needed, launch rosbridge manually in a separate terminal:
-
-```bash
-ros2 run rosbridge_server rosbridge_websocket
-```
-
-> 🔧 *Make sure to comment out the rosbridge node in `launch_harp.py` if running manually.*
-
----
 
 ## 🤖 Auto Installation Guide
 
@@ -83,12 +103,15 @@ ros2 run rosbridge_server rosbridge_websocket
 
 > **📝 Requires:** Ubuntu 22.04
 
-Run the automated ROS2 installer:
+Run the automated ROS2 installer in terminal:
 
 ```bash
 bash ros_setup.sh
 ```
-
+or
+```bash
+./ros_setup.sh
+```
 ---
 
 ### 🤖 HARP Setup
@@ -98,24 +121,25 @@ bash ros_setup.sh
 Clone the repo if you haven't already:
 
 ```bash
-git clone https://github.com/CEME-HARP/FYDP_HARP.git
-cd FYDP_HARP
+git clone https://github.com/Syed-Muhammad-Daniyal-Gillani/harp-humanoid-robot.git
+cd harp-humanoid-robot/
 ```
 
-Then run the provided setup script:
+Run the provided setup script in terminal:
 
 ```bash
 bash harp_setup.sh
 ```
-
+or
+```bash
+./harp_setup.sh
+```
 ---
 
 ## 🚀 Running the Project
 
-Once everything is set up, simply run:
+Once done, restart terminal and run:
 
 ```bash
 ros2 launch launch_harp launch_harp.py
 ```
-
-And you're good to go!
