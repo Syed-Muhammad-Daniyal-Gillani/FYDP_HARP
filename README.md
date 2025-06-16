@@ -2,6 +2,57 @@
 
 ---
 
+## 🤖 Auto Installation Guide
+
+---
+
+### ⚙️ ROS2 Setup
+
+> **📝 Requires:** Ubuntu 22.04
+
+Run the automated ROS2 installer in terminal:
+
+```bash
+bash ros_setup.sh
+```
+or
+```bash
+./ros_setup.sh
+```
+---
+
+### 🤖 HARP Setup
+
+> **📝 Requires:** ROS2 Humble already installed and sourced
+
+Clone the repo if you haven't already:
+
+```bash
+git clone https://github.com/Syed-Muhammad-Daniyal-Gillani/harp-humanoid-robot.git
+cd harp-humanoid-robot/
+```
+
+Run the provided setup script in terminal:
+
+```bash
+bash harp_setup.sh
+```
+or
+```bash
+./harp_setup.sh
+```
+---
+
+## 🚀 Running the Project
+
+Once done, restart terminal and run:
+
+```bash
+ros2 launch launch_harp launch_harp.py
+```
+
+---
+
 ## 📦 Manual Installation Guide
 
 ---
@@ -89,56 +140,6 @@ source install/setup.bash
 ---
 
 ### 🚀 Launch the HARP system
-
-```bash
-ros2 launch launch_harp launch_harp.py
-```
-
-
-## 🤖 Auto Installation Guide
-
----
-
-### ⚙️ ROS2 Setup
-
-> **📝 Requires:** Ubuntu 22.04
-
-Run the automated ROS2 installer in terminal:
-
-```bash
-bash ros_setup.sh
-```
-or
-```bash
-./ros_setup.sh
-```
----
-
-### 🤖 HARP Setup
-
-> **📝 Requires:** ROS2 Humble already installed and sourced
-
-Clone the repo if you haven't already:
-
-```bash
-git clone https://github.com/Syed-Muhammad-Daniyal-Gillani/harp-humanoid-robot.git
-cd harp-humanoid-robot/
-```
-
-Run the provided setup script in terminal:
-
-```bash
-bash harp_setup.sh
-```
-or
-```bash
-./harp_setup.sh
-```
----
-
-## 🚀 Running the Project
-
-Once done, restart terminal and run:
 
 ```bash
 ros2 launch launch_harp launch_harp.py
