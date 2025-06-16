@@ -6,6 +6,13 @@
 
 ---
 
+Clone the repo if you haven't already:
+
+```bash
+git clone https://github.com/Syed-Muhammad-Daniyal-Gillani/harp-humanoid-robot.git
+cd harp-humanoid-robot/
+```
+
 ### ⚙️ ROS2 Setup
 
 > **📝 Requires:** Ubuntu 22.04
@@ -24,13 +31,6 @@ or
 ### 🤖 HARP Setup
 
 > **📝 Requires:** ROS2 Humble already installed and sourced
-
-Clone the repo if you haven't already:
-
-```bash
-git clone https://github.com/Syed-Muhammad-Daniyal-Gillani/harp-humanoid-robot.git
-cd harp-humanoid-robot/
-```
 
 Run the provided setup script in terminal:
 
