@@ -9,7 +9,7 @@
 Clone the repo if you haven't already:
 
 ```bash
-git clone https://github.com/Syed-Muhammad-Daniyal-Gillani/harp-humanoid-robot.git
+git clone https://github.com/smdaniyalgillani/harp-humanoid-robot.git
 cd harp-humanoid-robot/
 ```
 
